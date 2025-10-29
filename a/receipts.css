@@ -1,0 +1,86 @@
+.receipts-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.section-title {
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-xl);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+}
+
+.receipts-list, .invoices-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: white;
+    margin-bottom: var(--spacing-xl);
+}
+
+.receipt-item, .invoice-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+}
+
+.receipt-item:hover, .invoice-item:hover {
+    background-color: var(--secondary-color);
+}
+
+.receipt-item:last-child, .invoice-item:last-child {
+    border-bottom: none;
+}
+
+.receipt-info, .invoice-info {
+    flex: 1;
+}
+
+.receipt-name, .invoice-name {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: var(--spacing-xs);
+}
+
+.receipt-details, .invoice-details {
+    font-size: var(--font-size-sm);
+    color: var(--text-light);
+}
+
+.receipt-arn, .invoice-arn {
+    font-family: monospace;
+    background: var(--secondary-color);
+    padding: 2px 6px;
+    border-radius: var(--small-border-radius);
+}
+
+.download-form {
+    margin: 0;
+}
+
+.download-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: background-color var(--transition-fast);
+}
+
+.download-btn:hover {
+    background: var(--primary-dark);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-light);
+    padding: var(--spacing-xl);
+    font-style: italic;
+}
