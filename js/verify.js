@@ -238,7 +238,7 @@ function formatDate(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const arn = urlParams.get('arn');
-    
+    const invoice = urlParams.get('invoice');
     if (arn) {
         openVerifyModal(arn);
     }
