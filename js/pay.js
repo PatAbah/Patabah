@@ -112,7 +112,7 @@ institutionInput.addEventListener('input', function() {
     currentFees = null;
     clearSummaryBox();
     
-    if (query.length < 1) {
+    if (query.length < 3) {
         suggestionsContainer.innerHTML = '';
         suggestionsContainer.style.display = 'none';
         return;
