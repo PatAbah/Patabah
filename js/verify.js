@@ -239,8 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const arn = urlParams.get('arn');
     const invoice = urlParams.get('invoice');
-    if (arn) {
-        openVerifyModal(arn);
+    
+    if (arn) openVerifyModal(arn);
+    
+    if (invoice) {
+        tabBtns.forEach(tab => tab.classList.remove('active'));
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        Array.from(tabBtns).find(btn => btn.getAttribute('data-tab') === 'invoice')?.classList.add('active');
+        document.getElementById('invoice-tab').classList.add('active');
+        document.getElementById('invoice-number').value = invoice;
     }
 });
 
