@@ -119,7 +119,7 @@ institutionInput.addEventListener('input', function() {
     }
     
     debounceTimer = setTimeout(() => {
-        fetchInstitutions(query);
+        (query.length > 2) && fetchInstitutions(query);
     }, 150);
 });
 
