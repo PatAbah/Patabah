@@ -1,1 +1,413 @@
-const e=document.querySelectorAll(".tab-btn"),t=document.querySelectorAll(".tab-pane"),n=document.getElementById("biller-form"),a=document.getElementById("invoice-form"),o=document.getElementById("institution"),i=document.getElementById("association"),s=document.getElementById("institution-suggestions"),c=document.getElementById("association-suggestions"),r=document.getElementById("amount-container"),l=document.querySelector("#biller-form .submit-btn");let d,u,m=null,p=null,y=0;function g(e=null){null!==e?l.innerHTML=`Pay <strong>₦${parseFloat(e).toLocaleString()}</strong>`:l.textContent="Proceed to Payment"}async function f(e,t=""){const n=await async function(e){const t=new FormData;t.append("amount",e);try{const e=await fetch("/api/service-fee",{method:"POST",body:t}),n=await e.json();return console.log(n),n.fee}catch(e){const t=document.querySelectorAll(".summary-box");return t[t.length-1].innerHTML='\n            <div class="summary-content">\n                <div class="summary-row">\n                    <span>Error fetching service charge. Your internet connection is probably broken.</span>\n                    <span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span>\n                </div>\n            </div>\n        ',document.querySelector(".submit-btn").style.display="none",document.getElementById("tos").style.display="none",document.getElementById("generateInvoice").style.display="none",0}}(parseFloat(e));y=n;let a=document.getElementById("summary-box");a||(a=document.createElement("div"),a.id="summary-box",a.className="summary-box",l.parentNode.insertBefore(a,document.getElementById("tos")));a.innerHTML=`\n        <div class="summary-content">\n            <div class="summary-row">\n                <span>Amount to pay:</span>\n                <span><strong>₦${n.toLocaleString()}</strong></span>\n            </div>\n            <div class="summary-note">Includes service charge</div>\n        </div>\n    `,g(n)}function v(){const e=document.getElementById("summary-box");e&&e.remove(),g()}function h(e,t){fetch(`/api/associations?q=${encodeURIComponent(e)}&institution_id=${t}`).then(e=>e.json()).then(e=>{!function(e){if(c.innerHTML="",0===e.length)return void(c.style.display="none");e.forEach(e=>{const t=document.createElement("div");t.className="suggestion-item",t.textContent=e.association_name,t.setAttribute("data-fees",e.fees),t.setAttribute("data-id",e.id),t.addEventListener("click",()=>{i.value=e.association_name,p=JSON.parse(e.fees),c.innerHTML="",c.style.display="none",function(e){if(r.innerHTML="",v(),"object"==typeof e&&Object.keys(e).length>1){const t=document.createElement("div");t.className="fee-options-container",Object.entries(e).forEach(([e,n])=>{const a=document.createElement("div");a.className="fee-option-wrapper";const o=document.createElement("input");o.type="radio",o.name="fee_category",o.value=n,o.id=`fee_${e}`,o.className="fee-radio";const i=document.createElement("label");i.htmlFor=`fee_${e}`,i.className="fee-label",i.innerHTML=`\n                <span class="fee-category">${e}</span>\n                <span class="fee-amount">₦${parseFloat(n).toLocaleString()}</span>\n            `,o.addEventListener("change",function(){this.checked&&f(n,e)}),a.appendChild(o),a.appendChild(i),t.appendChild(a)}),r.appendChild(t)}else{const t="object"==typeof e?Object.values(e)[0]:e,n=document.createElement("input");n.type="text",n.className="form-input",n.value=`₦${parseFloat(t).toLocaleString()}`,n.disabled=!0,n.name="amount",r.appendChild(n),f(t)}}(p)}),c.appendChild(t)}),c.style.display="block"}(e)}).catch(e=>{console.error("Error fetching associations:",e)})}function b(e,t=!1){const n=o.value,a=i.value,s=document.getElementById("fullname").value,c=document.getElementById("matnumber").value,r=document.getElementById("email_address").value,l=document.getElementById("phone_number").value;let d=y,u="";if(p&&"object"==typeof p&&Object.keys(p).length>1){const e=document.querySelector('input[name="fee_category"]:checked');if(!e)return alert("Please select a fee category"),!1;u=document.querySelector(`label[for="${e.id}"] .fee-category`).textContent}if(!(n&&a&&s&&c&&d&&l))return alert("Please FILL in ALL required fields"),!1;const g=document.getElementById("generateInvoice");if(t&&g){const e=g.innerHTML;g.innerHTML='<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Generating...',g.disabled=!0,g.setAttribute("data-original-text",e)}const f=new FormData;return f.append("institution",n),f.append("institution_id",m),f.append("association",a),f.append("fullname",s),f.append("matnumber",c),f.append("email",r),f.append("phone",l),f.append("amount",d),u&&f.append("category",u),t&&f.append("generate_invoice","true"),fetch(e,{method:"POST",body:f}).then(e=>e.json()).then(e=>{if(t&&g){const e=g.getAttribute("data-original-text");g.innerHTML=e,g.disabled=!1}return e.success?t?e.invoice_callback?window.location.href=e.invoice_callback:(alert("Invoice generated but no redirect URL provided"),console.log("Invoice data:",e)):window.location.href=e.authorization_url:alert("Request failed: "+e.message),e}).catch(e=>{if(console.error("Error:",e),alert("An error occurred while processing your request"),t&&g){const e=g.getAttribute("data-original-text");g.innerHTML=e,g.disabled=!1}throw e})}e.forEach(n=>{n.addEventListener("click",()=>{e.forEach(e=>e.classList.remove("active")),t.forEach(e=>e.classList.remove("active")),n.classList.add("active");const a=n.getAttribute("data-tab");document.getElementById(`${a}-tab`).classList.add("active")})}),o.addEventListener("input",function(){clearTimeout(d);const e=this.value.trim();if(i.value="",i.disabled=!0,i.placeholder="Select institution first",c.innerHTML="",c.style.display="none",r.innerHTML="",m=null,p=null,v(),e.length<1)return s.innerHTML="",void(s.style.display="none");d=setTimeout(()=>{!function(e){fetch(`/api/institutions?q=${encodeURIComponent(e)}`).then(e=>e.json()).then(e=>{!function(e){if(s.innerHTML="",0===e.length)return void(s.style.display="none");e.forEach(e=>{const t=document.createElement("div");t.className="suggestion-item",t.textContent=e.name,t.setAttribute("data-id",e.id),t.addEventListener("click",()=>{o.value=e.name,m=e.id,s.innerHTML="",s.style.display="none",i.disabled=!1,i.placeholder="Enter association name",i.value="",r.innerHTML="",p=null,v(),h("",m)}),s.appendChild(t)}),s.style.display="block"}(e)}).catch(e=>{console.error("Error fetching institutions:",e)})}(e)},150)}),i.addEventListener("input",function(){if(!m)return;clearTimeout(u);const e=this.value.trim();u=setTimeout(()=>{h(e,m)},300)}),i.addEventListener("focus",function(){m&&0===c.children.length?h("",m):m&&c.children.length>0&&(c.style.display="block")}),document.addEventListener("click",function(e){o.contains(e.target)||s.contains(e.target)||(s.style.display="none"),i.contains(e.target)||c.contains(e.target)||(c.style.display="none")}),n.addEventListener("submit",function(e){e.preventDefault(),b("/init-payment",!1)}),document.getElementById("generateInvoice").addEventListener("click",function(e){e.preventDefault(),b("/generate-invoice",!0)}),a.addEventListener("submit",function(e){e.preventDefault();const t=document.getElementById("invoice-number").value;document.getElementById("payer-email").value;t||alert("Please enter the ARN")}),document.addEventListener("DOMContentLoaded",function(){i.disabled=!0,i.placeholder="Select institution first"});
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabPanes = document.querySelectorAll('.tab-pane');
+const billerForm = document.getElementById('biller-form');
+const invoiceForm = document.getElementById('invoice-form');
+const institutionInput = document.getElementById('institution');
+const associationInput = document.getElementById('association');
+const suggestionsContainer = document.getElementById('institution-suggestions');
+const associationSuggestionsContainer = document.getElementById('association-suggestions');
+const amountContainer = document.getElementById('amount-container');
+const submitBtn = document.querySelector('#biller-form .submit-btn');
+
+let currentInstitutionId = null;
+let currentFees = null;
+let SERVICE_CHARGE = 0;
+let selectedAmount = 0;
+let endpoint = '/init-payment';
+
+async function getTotalAmount(inputAmount) {
+    const formFeeData = new FormData();
+    formFeeData.append('amount', inputAmount);
+    try {
+        const response = await fetch('/api/service-fee', {
+            method: 'POST',
+            body: formFeeData
+        });
+        const data = await response.json();
+        console.log(data);
+        return data.fee;
+    } catch(error) {
+        const summaryBoxes = document.querySelectorAll('.summary-box');
+        const lastSummaryBox = summaryBoxes[summaryBoxes.length - 1];
+        lastSummaryBox.innerHTML = `
+            <div class="summary-content">
+                <div class="summary-row">
+                    <span>Error fetching service charge. Your internet connection is probably broken.</span>
+                    <span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span>
+                </div>
+            </div>
+        `;
+        document.querySelector('.submit-btn').style.display = 'none';
+        document.getElementById('tos').style.display = 'none';
+        document.getElementById('generateInvoice').style.display = 'none';
+        return 0; 
+    }
+}
+
+function updatePaymentButton(totalAmount = null) {
+    if (totalAmount !== null) {
+        submitBtn.innerHTML = `Pay <strong>₦${parseFloat(totalAmount).toLocaleString()}</strong>`;
+    } else {
+        submitBtn.textContent = 'Proceed to Payment';
+    }
+}
+
+async function showSummaryBox(associationAmount, category = '') {
+    const totalAmount = await getTotalAmount(parseFloat(associationAmount));
+    selectedAmount = totalAmount;
+    
+    let summaryBox = document.getElementById('summary-box');
+    if (!summaryBox) {
+        summaryBox = document.createElement('div');
+        summaryBox.id = 'summary-box';
+        summaryBox.className = 'summary-box';
+        submitBtn.parentNode.insertBefore(summaryBox, document.getElementById('tos'));
+    }
+    
+    const categoryText = category ? ` (${category})` : '';
+    summaryBox.innerHTML = `
+        <div class="summary-content">
+            <div class="summary-row">
+                <span>Amount to pay:</span>
+                <span><strong>₦${totalAmount.toLocaleString()}</strong></span>
+            </div>
+            <div class="summary-note">Includes service charge</div>
+        </div>
+    `;
+    
+    updatePaymentButton(totalAmount);
+}
+
+function clearSummaryBox() {
+    const summaryBox = document.getElementById('summary-box');
+    if (summaryBox) {
+        summaryBox.remove();
+    }
+    updatePaymentButton();
+}
+
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        tabBtns.forEach(tab => tab.classList.remove('active'));
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+    });
+});
+
+let debounceTimer;
+institutionInput.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+    
+    associationInput.value = '';
+    associationInput.disabled = true;
+    associationInput.placeholder = "Select institution first";
+    associationSuggestionsContainer.innerHTML = '';
+    associationSuggestionsContainer.style.display = 'none';
+    amountContainer.innerHTML = '';
+    currentInstitutionId = null;
+    currentFees = null;
+    clearSummaryBox();
+    
+    if (query.length < 1) {
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+        fetchInstitutions(query);
+    }, 150);
+});
+
+let associationDebounceTimer;
+associationInput.addEventListener('input', function() {
+    if (!currentInstitutionId) return;
+    
+    clearTimeout(associationDebounceTimer);
+    const query = this.value.trim();
+    
+    associationDebounceTimer = setTimeout(() => {
+        fetchAssociations(query, currentInstitutionId);
+    }, 300);
+});
+
+associationInput.addEventListener('focus', function() {
+    if (currentInstitutionId && associationSuggestionsContainer.children.length === 0) {
+        fetchAssociations('', currentInstitutionId);
+    } else if (currentInstitutionId && associationSuggestionsContainer.children.length > 0) {
+        associationSuggestionsContainer.style.display = 'block';
+    }
+});
+
+function fetchInstitutions(query) {
+    fetch(`/api/institutions?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            displayInstitutionSuggestions(data);
+        })
+        .catch(error => {
+            console.error('Error fetching institutions:', error);
+        });
+}
+
+function fetchAssociations(query, institutionId) {
+    fetch(`/api/associations?q=${encodeURIComponent(query)}&institution_id=${institutionId}`)
+        .then(response => response.json())
+        .then(data => {
+            displayAssociationSuggestions(data);
+        })
+        .catch(error => {
+            console.error('Error fetching associations:', error);
+        });
+}
+
+function displayInstitutionSuggestions(institutions) {
+    suggestionsContainer.innerHTML = '';
+    
+    if (institutions.length === 0) {
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+    
+    institutions.forEach(inst => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+        suggestionItem.textContent = inst.name;
+        suggestionItem.setAttribute('data-id', inst.id);
+        
+        suggestionItem.addEventListener('click', () => {
+            institutionInput.value = inst.name;
+            currentInstitutionId = inst.id;
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+            
+            associationInput.disabled = false;
+            associationInput.placeholder = "Enter association name";
+            associationInput.value = '';
+            amountContainer.innerHTML = '';
+            currentFees = null;
+            clearSummaryBox();
+            
+            fetchAssociations('', currentInstitutionId);
+        });
+        
+        suggestionsContainer.appendChild(suggestionItem);
+    });
+    
+    suggestionsContainer.style.display = 'block';
+}
+
+function displayAssociationSuggestions(associations) {
+    associationSuggestionsContainer.innerHTML = '';
+    
+    if (associations.length === 0) {
+        associationSuggestionsContainer.style.display = 'none';
+        return;
+    }
+    
+    associations.forEach(assoc => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+        suggestionItem.textContent = assoc.association_name;
+        suggestionItem.setAttribute('data-fees', assoc.fees);
+        suggestionItem.setAttribute('data-id', assoc.id);
+        
+        suggestionItem.addEventListener('click', () => {
+            associationInput.value = assoc.association_name;
+            currentFees = JSON.parse(assoc.fees);
+            associationSuggestionsContainer.innerHTML = '';
+            associationSuggestionsContainer.style.display = 'none';
+            renderFeeOptions(currentFees);
+        });
+        
+        associationSuggestionsContainer.appendChild(suggestionItem);
+    });
+    
+    associationSuggestionsContainer.style.display = 'block';
+}
+
+function renderFeeOptions(fees) {
+    amountContainer.innerHTML = '';
+    clearSummaryBox();
+    
+    if (typeof fees === 'object' && Object.keys(fees).length > 1) {
+        const feeOptionsContainer = document.createElement('div');
+        feeOptionsContainer.className = 'fee-options-container';
+        
+        Object.entries(fees).forEach(([category, amount]) => {
+            const optionWrapper = document.createElement('div');
+            optionWrapper.className = 'fee-option-wrapper';
+            
+            const radioInput = document.createElement('input');
+            radioInput.type = 'radio';
+            radioInput.name = 'fee_category';
+            radioInput.value = amount;
+            radioInput.id = `fee_${category}`;
+            radioInput.className = 'fee-radio';
+            
+            const radioLabel = document.createElement('label');
+            radioLabel.htmlFor = `fee_${category}`;
+            radioLabel.className = 'fee-label';
+            radioLabel.innerHTML = `
+                <span class="fee-category">${category}</span>
+                <span class="fee-amount">₦${parseFloat(amount).toLocaleString()}</span>
+            `;
+            
+            radioInput.addEventListener('change', function() {
+                if (this.checked) {
+                    showSummaryBox(amount, category);
+                }
+            });
+            
+            optionWrapper.appendChild(radioInput);
+            optionWrapper.appendChild(radioLabel);
+            feeOptionsContainer.appendChild(optionWrapper);
+        });
+        
+        amountContainer.appendChild(feeOptionsContainer);
+    } else {
+        const amount = typeof fees === 'object' ? Object.values(fees)[0] : fees;
+        const amountInput = document.createElement('input');
+        amountInput.type = 'text';
+        amountInput.className = 'form-input';
+        amountInput.value = `₦${parseFloat(amount).toLocaleString()}`;
+        amountInput.disabled = true;
+        amountInput.name = 'amount';
+        amountContainer.appendChild(amountInput);
+        
+        showSummaryBox(amount);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!institutionInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+        suggestionsContainer.style.display = 'none';
+    }
+    if (!associationInput.contains(e.target) && !associationSuggestionsContainer.contains(e.target)) {
+        associationSuggestionsContainer.style.display = 'none';
+    }
+});
+
+function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
+    const institution = institutionInput.value;
+    const association = associationInput.value;
+    const fullname = document.getElementById('fullname').value;
+    const matnumber = document.getElementById('matnumber').value;
+    const email = document.getElementById('email_address').value;
+    const phone = document.getElementById('phone_number').value;
+    
+    let amount = selectedAmount;
+    let category = '';
+    
+    if (currentFees && typeof currentFees === 'object' && Object.keys(currentFees).length > 1) {
+        const selectedFee = document.querySelector('input[name="fee_category"]:checked');
+        if (!selectedFee) {
+            alert('Please select a fee category');
+            return false;
+        }
+        category = document.querySelector(`label[for="${selectedFee.id}"] .fee-category`).textContent;
+    }
+    
+    if (!institution || !association || !fullname || !matnumber || !amount || !phone) {
+        alert('Please FILL in ALL required fields');
+        return false;
+    }
+    
+    const generateInvoiceBtn = document.getElementById('generateInvoice');
+    if (isGenerateInvoice && generateInvoiceBtn) {
+        const originalText = generateInvoiceBtn.innerHTML;
+        generateInvoiceBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Generating...';
+        generateInvoiceBtn.disabled = true;
+        
+        generateInvoiceBtn.setAttribute('data-original-text', originalText);
+    }
+    
+    const formData = new FormData();
+    formData.append('institution', institution);
+    formData.append('institution_id', currentInstitutionId);
+    formData.append('association', association);
+    formData.append('fullname', fullname);
+    formData.append('matnumber', matnumber);
+    formData.append('email', email);
+    formData.append('phone', phone);
+    formData.append('amount', amount);
+    if (category) formData.append('category', category);
+    
+    // Add a flag to indicate this is an invoice generation request
+    if (isGenerateInvoice) {
+        formData.append('generate_invoice', 'true');
+    }
+    
+    return fetch(submitEndpoint, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (isGenerateInvoice && generateInvoiceBtn) {
+            const originalText = generateInvoiceBtn.getAttribute('data-original-text');
+            generateInvoiceBtn.innerHTML = originalText;
+            generateInvoiceBtn.disabled = false;
+        }
+        
+        if (data.success) {
+            if (isGenerateInvoice) {
+                if (data.invoice_callback) {
+                    window.location.href = data.invoice_callback;
+                } else {
+                    alert('Invoice generated but no redirect URL provided');
+                    console.log('Invoice data:', data);
+                }
+            } else {
+                window.location.href = data.authorization_url;
+            }
+        } else {
+            alert('Request failed: ' + data.message);
+        }
+        return data;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request');
+        
+        if (isGenerateInvoice && generateInvoiceBtn) {
+            const originalText = generateInvoiceBtn.getAttribute('data-original-text');
+            generateInvoiceBtn.innerHTML = originalText;
+            generateInvoiceBtn.disabled = false;
+        }
+        
+        throw error;
+    });
+}
+
+// Original form submit handler
+billerForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    handleFormSubmission(endpoint, false);
+});
+
+// Generate invoice handler
+document.getElementById('generateInvoice').addEventListener('click', function(e){
+    e.preventDefault();
+    handleFormSubmission('/generate-invoice', true);
+});
+
+invoiceForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const invoiceNumber = document.getElementById('invoice-number').value;    const payerEmail = document.getElementById('payer-email').value;
+    
+    if (!invoiceNumber) {
+        alert('Please enter the ARN');
+        return;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    associationInput.disabled = true;
+    associationInput.placeholder = "Select institution first";
+});

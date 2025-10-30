@@ -1,1 +1,161 @@
-let e=null,t=!1,a=!1;const n=document.getElementById("shortname"),s=document.getElementById("validation-message"),o=document.getElementById("submit-btn"),i=document.getElementById("shortlink-form"),c=document.getElementById("form-section"),l=document.getElementById("success-section"),r=document.getElementById("created-link"),d=document.getElementById("copy-btn");n.addEventListener("input",function(n){this.value=this.value.toUpperCase();const i=n.target.value.trim();if(e&&clearTimeout(e),t=!1,o.disabled=!0,""===i)return s.textContent="",void(s.className="validation-message");const c=function(e){return e.length<2?{valid:!1,message:"Shortname must be at least 2 characters"}:e.length>21?{valid:!1,message:"Shortname must be at most 21 characters"}:/^[a-zA-Z0-9_-]+$/.test(e)?{valid:!0,message:""}:{valid:!1,message:"Only letters, numbers, hyphens, and underscores allowed"}}(i);if(!c.valid)return s.textContent=c.message,void(s.className="validation-message error");e=setTimeout(()=>{!async function(e){a=!0,s.textContent="Checking availability...",s.className="validation-message checking",o.disabled=!0;try{const n=await fetch("/ajax/association/check-shortname",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shortname:e})}),i=await n.json();a=!1,!0===i?(s.textContent="This shortname is already taken",s.className="validation-message unavailable",t=!1,o.disabled=!0):(s.textContent="✓ This shortname is available",s.className="validation-message available",t=!0,o.disabled=!1)}catch(e){a=!1,s.textContent="Error checking availability. Please try again.",s.className="validation-message error",t=!1,o.disabled=!0}}(i)},500)}),i.addEventListener("submit",async function(e){if(e.preventDefault(),!t||a)return;const i=n.value.trim();o.disabled=!0,o.textContent="Creating...";try{const e=await fetch("/ajax/association/shortname",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shortname:i})}),t=await e.json();if(t.success){const e=`${window.location.origin}${t.pay_url}`;r.value=e,c.style.display="none",l.style.display="block"}else s.textContent=t.message||"Failed to create shortlink. Please try again.",s.className="validation-message error",o.disabled=!1,o.textContent="Create Shortlink"}catch(e){console.error("Error:",e),s.textContent="Network error occurred. Please check your connection and try again.",s.className="validation-message error",o.disabled=!1,o.textContent="Create Shortlink"}}),d.addEventListener("click",function(){r.select(),r.setSelectionRange(0,99999),navigator.clipboard.writeText(r.value).then(function(){const e=d.textContent;d.textContent="Copied!",d.classList.add("copied"),setTimeout(function(){d.textContent=e,d.classList.remove("copied")},2e3)}).catch(function(){document.execCommand("copy");const e=d.textContent;d.textContent="Copied!",d.classList.add("copied"),setTimeout(function(){d.textContent=e,d.classList.remove("copied")},2e3)})});
+let checkTimeout = null;
+let isAvailable = false;
+let isChecking = false;
+const shortnameInput = document.getElementById('shortname');
+const validationMessage = document.getElementById('validation-message');
+const submitBtn = document.getElementById('submit-btn');
+const shortlinkForm = document.getElementById('shortlink-form');
+const formSection = document.getElementById('form-section');
+const successSection = document.getElementById('success-section');
+const createdLink = document.getElementById('created-link');
+const copyBtn = document.getElementById('copy-btn');
+
+function validateInput(value) {
+    if (value.length < 2) {
+        return { valid: false, message: 'Shortname must be at least 2 characters' };
+    }
+    if (value.length > 21) {
+        return { valid: false, message: 'Shortname must be at most 21 characters' };
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+        return { valid: false, message: 'Only letters, numbers, hyphens, and underscores allowed' };
+    }
+    return { valid: true, message: '' };
+}
+
+async function checkAvailability(shortname) {
+    isChecking = true;
+    validationMessage.textContent = 'Checking availability...';
+    validationMessage.className = 'validation-message checking';
+    submitBtn.disabled = true;
+
+    try {
+        const response = await fetch('/ajax/association/check-shortname', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ shortname: shortname })
+        });
+
+        const data = await response.json();
+        isChecking = false;
+
+        if (data === true) {
+            validationMessage.textContent = 'This shortname is already taken';
+            validationMessage.className = 'validation-message unavailable';
+            isAvailable = false;
+            submitBtn.disabled = true;
+        } else {
+            validationMessage.textContent = '✓ This shortname is available';
+            validationMessage.className = 'validation-message available';
+            isAvailable = true;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        isChecking = false;
+        validationMessage.textContent = 'Error checking availability. Please try again.';
+        validationMessage.className = 'validation-message error';
+        isAvailable = false;
+        submitBtn.disabled = true;
+    }
+}
+
+shortnameInput.addEventListener('input', function(e) {
+    this.value = this.value.toUpperCase();
+    const value = e.target.value.trim();
+    
+    if (checkTimeout) {
+        clearTimeout(checkTimeout);
+    }
+
+    isAvailable = false;
+    submitBtn.disabled = true;
+
+    if (value === '') {
+        validationMessage.textContent = '';
+        validationMessage.className = 'validation-message';
+        return;
+    }
+
+    const validation = validateInput(value);
+    
+    if (!validation.valid) {
+        validationMessage.textContent = validation.message;
+        validationMessage.className = 'validation-message error';
+        return;
+    }
+
+    checkTimeout = setTimeout(() => {
+        checkAvailability(value);
+    }, 500);
+});
+shortlinkForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!isAvailable || isChecking) {
+        return;
+    }
+
+    const shortname = shortnameInput.value.trim();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
+    try {
+        const response = await fetch('/ajax/association/shortname', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ shortname: shortname })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const fullUrl = `${window.location.origin}${result.pay_url}`;
+            createdLink.value = fullUrl;
+            //successMessage.innerHTML = `Shortlink <strong>${result.shortname}</strong> created successfully!`;
+            formSection.style.display = 'none';
+            successSection.style.display = 'block';
+        } else {
+            validationMessage.textContent = result.message || 'Failed to create shortlink. Please try again.';
+            validationMessage.className = 'validation-message error';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Shortlink';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        validationMessage.textContent = 'Network error occurred. Please check your connection and try again.';
+        validationMessage.className = 'validation-message error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Shortlink';
+    }
+});
+
+
+copyBtn.addEventListener('click', function() {
+    createdLink.select();
+    createdLink.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(createdLink.value).then(function() {
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        
+        setTimeout(function() {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    }).catch(function() {
+        document.execCommand('copy');
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+        
+        setTimeout(function() {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    });
+});

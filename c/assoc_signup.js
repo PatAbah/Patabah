@@ -1,1 +1,282 @@
-let e={institution:"",institution_id:null,association_name:"",association_email:"",bank_name:"",account_number:"",fees:{},president_name:"",president_phone:""};function t(t){const n=document.querySelector(".step-content.active"),i=n.querySelectorAll("input[required]");let s=!0;if(i.forEach(e=>{e.value.trim()?e.style.borderColor="var(--border-color)":(s=!1,e.style.borderColor="var(--error-color)")}),!s)return void alert("Please fill in all required fields");const c=parseInt(n.id.split("-")[1]);if(1===c){if(e.institution=document.getElementById("institution").value.trim(),!e.institution_id)return void alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!")}else if(2===c){e.association_name=document.getElementById("association-name").value.trim(),e.association_email=document.getElementById("association-email").value.trim(),e.bank_name=document.getElementById("bank-name").value.trim(),e.account_number=document.getElementById("account-number").value.trim();const t=document.querySelectorAll(".fee-row");if(e.fees={},t.forEach(t=>{const n=t.querySelector(".fee-category").value.trim(),o=t.querySelector(".fee-amount").value.trim();n&&o&&(e.fees[n]=o)}),0===Object.keys(e.fees).length)return void alert("Please add at least one fee category")}else 3===c&&(e.president_name=document.getElementById("president-name").value.trim(),e.president_phone=document.getElementById("president-phone").value.trim(),function(){document.getElementById("review-institution").textContent=e.institution,document.getElementById("review-association").textContent=e.association_name,document.getElementById("review-association-email").textContent=e.association_email,document.getElementById("review-bank-name").textContent=e.bank_name,document.getElementById("review-account-number").textContent=e.account_number,document.getElementById("review-president").textContent=e.president_name,document.getElementById("review-phone").textContent=e.president_phone;const t=document.getElementById("review-fees");t.innerHTML="";for(const[n,o]of Object.entries(e.fees)){const e=document.createElement("p");e.style.margin="5px 0",e.innerHTML=`<strong>${n}:</strong> ₦${parseFloat(o).toLocaleString()}`,t.appendChild(e)}}());o(t)}function n(e){o(e)}function o(e){document.querySelectorAll(".step-content").forEach(e=>{e.classList.remove("active")}),document.getElementById(`step-${e}`).classList.add("active"),document.querySelectorAll(".progress-step").forEach(t=>{parseInt(t.dataset.step)<=e?t.classList.add("active"):t.classList.remove("active")})}function i(){const e=document.getElementById("fees-container"),t=document.createElement("div");t.className="fee-row",t.innerHTML='\n        <input type="text" class="form-input fee-category" placeholder="Category (e.g., Returning Students)" required>\n        <input type="number" class="form-input fee-amount" placeholder="Amount" required>\n        <button type="button" class="remove-fee-btn">×</button>\n    ',e.appendChild(t),c(),t.querySelector(".remove-fee-btn").addEventListener("click",function(){s(this)})}function s(e){e.parentElement.remove(),c()}function c(){const e=document.querySelectorAll(".fee-row");e.forEach((t,n)=>{const o=t.querySelector(".remove-fee-btn");e.length>1?o.style.display="flex":o.style.display="none"})}async function r(){const t=document.getElementById("final-submit"),n=document.getElementById("submission-message");t.disabled=!0,t.textContent="Submitting...";try{console.log(e);const t=await fetch("/ajax/association/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(e)}),o=await t.json();if(!t.ok)throw new Error(o.message||"Registration failed");n.className="message-container success",n.textContent=o.message||"Association registered successfully!",setTimeout(()=>{window.location="/a/shortname"},2e3)}catch(e){n.className="message-container error",n.textContent=e.message||"An error occurred. Please try again.",t.disabled=!1,t.textContent="Submit Registration"}}function a(t){fetch(`/api/institutions?q=${encodeURIComponent(t)}&range=all`).then(e=>e.json()).then(t=>{!function(t){const n=document.getElementById("institution-suggestions");if(n.innerHTML="",0===t.length)return void(n.style.display="none");t.forEach(t=>{const o=document.createElement("div");o.className="suggestion-item",o.textContent=t.name,o.setAttribute("data-id",t.id),o.addEventListener("click",()=>{document.getElementById("institution").value=t.name,e.institution_id=t.id,n.innerHTML="",n.style.display="none"}),n.appendChild(o)}),n.style.display="block"}(t)}).catch(e=>{console.error("Error fetching institutions:",e)})}document.addEventListener("DOMContentLoaded",function(){document.querySelector("#step-1 .submit-btn").addEventListener("click",function(){t(2)}),document.querySelector("#step-2 .back-btn").addEventListener("click",function(){n(1)}),document.querySelector("#step-2 .submit-btn").addEventListener("click",function(){t(3)}),document.querySelector("#step-3 .back-btn").addEventListener("click",function(){n(2)}),document.querySelector("#step-3 .submit-btn").addEventListener("click",function(){t(4)}),document.querySelector("#step-4 .back-btn").addEventListener("click",function(){n(3)}),document.querySelector("#final-submit").addEventListener("click",r),document.querySelector(".add-fee-btn").addEventListener("click",i),document.querySelector(".remove-fee-btn").addEventListener("click",function(){s(this)});const o=document.getElementById("institution"),c=document.getElementById("institution-suggestions");let l;o.addEventListener("input",function(){clearTimeout(l);const t=this.value.trim();if(e.institution_id=null,t.length<3)return c.innerHTML="",void(c.style.display="none");l=setTimeout(()=>{a(t)},300)}),document.addEventListener("click",function(e){o.contains(e.target)||c.contains(e.target)||(c.style.display="none")})});
+let formData = {
+    institution: '',
+    institution_id: null,
+    association_name: '',
+    association_email: '',
+    bank_name: '',
+    account_number: '',
+    fees: {},
+    president_name: '',
+    president_phone: ''
+};
+
+function nextStep(stepNumber) {
+    const currentStep = document.querySelector('.step-content.active');
+    const inputs = currentStep.querySelectorAll('input[required]');
+    let isValid = true;
+
+    inputs.forEach(input => {
+        if (!input.value.trim()) {
+            isValid = false;
+            input.style.borderColor = 'var(--error-color)';
+        } else {
+            input.style.borderColor = 'var(--border-color)';
+        }
+    });
+
+    if (!isValid) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    const currentStepNum = parseInt(currentStep.id.split('-')[1]);
+    
+    if (currentStepNum === 1) {
+        formData.institution = document.getElementById('institution').value.trim();
+        if (!formData.institution_id) {
+            alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!");
+            return;
+        }
+    } else if (currentStepNum === 2) {
+        formData.association_name = document.getElementById('association-name').value.trim();
+        formData.association_email = document.getElementById('association-email').value.trim();
+        formData.bank_name = document.getElementById('bank-name').value.trim();
+        formData.account_number = document.getElementById('account-number').value.trim();
+        
+        const feeRows = document.querySelectorAll('.fee-row');
+        formData.fees = {};
+        
+        feeRows.forEach(row => {
+            const category = row.querySelector('.fee-category').value.trim();
+            const amount = row.querySelector('.fee-amount').value.trim();
+            if (category && amount) {
+                formData.fees[category] = amount;
+            }
+        });
+
+        if (Object.keys(formData.fees).length === 0) {
+            alert('Please add at least one fee category');
+            return;
+        }
+    } else if (currentStepNum === 3) {
+        formData.president_name = document.getElementById('president-name').value.trim();
+        formData.president_phone = document.getElementById('president-phone').value.trim();
+        
+        populateReview();
+    }
+
+    showStep(stepNumber);
+}
+
+function previousStep(stepNumber) {
+    showStep(stepNumber);
+}
+
+function showStep(stepNumber) {
+    document.querySelectorAll('.step-content').forEach(step => {
+        step.classList.remove('active');
+    });
+
+    document.getElementById(`step-${stepNumber}`).classList.add('active');
+
+    document.querySelectorAll('.progress-step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        if (stepNum <= stepNumber) {
+            step.classList.add('active');
+        } else {
+            step.classList.remove('active');
+        }
+    });
+}
+
+function addFeeRow() {
+    const container = document.getElementById('fees-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'fee-row';
+    newRow.innerHTML = `
+        <input type="text" class="form-input fee-category" placeholder="Category (e.g., Returning Students)" required>
+        <input type="number" class="form-input fee-amount" placeholder="Amount" required>
+        <button type="button" class="remove-fee-btn">×</button>
+    `;
+    container.appendChild(newRow);
+
+    updateRemoveButtons();
+    
+    newRow.querySelector('.remove-fee-btn').addEventListener('click', function() {
+        removeFee(this);
+    });
+}
+
+function removeFee(button) {
+    button.parentElement.remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.fee-row');
+    rows.forEach((row, index) => {
+        const removeBtn = row.querySelector('.remove-fee-btn');
+        if (rows.length > 1) {
+            removeBtn.style.display = 'flex';
+        } else {
+            removeBtn.style.display = 'none';
+        }
+    });
+}
+
+function populateReview() {
+    document.getElementById('review-institution').textContent = formData.institution;
+    document.getElementById('review-association').textContent = formData.association_name;
+    document.getElementById('review-association-email').textContent = formData.association_email;
+    document.getElementById('review-bank-name').textContent = formData.bank_name;
+    document.getElementById('review-account-number').textContent = formData.account_number;
+    document.getElementById('review-president').textContent = formData.president_name;
+    document.getElementById('review-phone').textContent = formData.president_phone;
+
+    const feesContainer = document.getElementById('review-fees');
+    feesContainer.innerHTML = '';
+    for (const [category, amount] of Object.entries(formData.fees)) {
+        const feeItem = document.createElement('p');
+        feeItem.style.margin = '5px 0';
+        feeItem.innerHTML = `<strong>${category}:</strong> ₦${parseFloat(amount).toLocaleString()}`;
+        feesContainer.appendChild(feeItem);
+    }
+}
+
+async function submitForm() {
+    const submitBtn = document.getElementById('final-submit');
+    const messageContainer = document.getElementById('submission-message');
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    try {
+        console.log(formData);
+        const response = await fetch('/ajax/association/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            messageContainer.className = 'message-container success';
+            messageContainer.textContent = result.message || 'Association registered successfully!';
+            
+            setTimeout(() => {
+                window.location = "/a/shortname";
+            }, 2000);
+        } else {
+            throw new Error(result.message || 'Registration failed');
+        }
+    } catch (error) {
+        messageContainer.className = 'message-container error';
+        messageContainer.textContent = error.message || 'An error occurred. Please try again.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Registration';
+    }
+}
+
+function fetchInstitutions(query) {
+    fetch(`/api/institutions?q=${encodeURIComponent(query)}&range=all`)
+        .then(response => response.json())
+        .then(data => {
+            displayInstitutionSuggestions(data);
+        })
+        .catch(error => {
+            console.error('Error fetching institutions:', error);
+        });
+}
+
+function displayInstitutionSuggestions(institutions) {
+    const suggestionsContainer = document.getElementById('institution-suggestions');
+    suggestionsContainer.innerHTML = '';
+    
+    if (institutions.length === 0) {
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+    
+    institutions.forEach(inst => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+        suggestionItem.textContent = inst.name;
+        suggestionItem.setAttribute('data-id', inst.id);
+        
+        suggestionItem.addEventListener('click', () => {
+            const institutionInput = document.getElementById('institution');
+            institutionInput.value = inst.name;
+            formData.institution_id = inst.id;
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+        });
+        
+        suggestionsContainer.appendChild(suggestionItem);
+    });
+    
+    suggestionsContainer.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('#step-1 .submit-btn').addEventListener('click', function() {
+        nextStep(2);
+    });
+
+    document.querySelector('#step-2 .back-btn').addEventListener('click', function() {
+        previousStep(1);
+    });
+
+    document.querySelector('#step-2 .submit-btn').addEventListener('click', function() {
+        nextStep(3);
+    });
+
+    document.querySelector('#step-3 .back-btn').addEventListener('click', function() {
+        previousStep(2);
+    });
+
+    document.querySelector('#step-3 .submit-btn').addEventListener('click', function() {
+        nextStep(4);
+    });
+
+    document.querySelector('#step-4 .back-btn').addEventListener('click', function() {
+        previousStep(3);
+    });
+
+    document.querySelector('#final-submit').addEventListener('click', submitForm);
+
+    document.querySelector('.add-fee-btn').addEventListener('click', addFeeRow);
+
+    document.querySelector('.remove-fee-btn').addEventListener('click', function() {
+        removeFee(this);
+    });
+
+    const institutionInput = document.getElementById('institution');
+    const suggestionsContainer = document.getElementById('institution-suggestions');
+
+    let debounceTimer;
+    institutionInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        formData.institution_id = null;
+        
+        if (query.length < 3) {
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        debounceTimer = setTimeout(() => {
+            fetchInstitutions(query);
+        }, 300);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!institutionInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+});
