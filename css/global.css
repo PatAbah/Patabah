@@ -9,7 +9,8 @@
     --border-color: #dddddd;
     --error-color: #d32f2f;
     --success-color: #388e3c;
-    --font-family: "Merriweather", sans-serif, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /*--font-family: "Merriweather", sans-serif, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;*/
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-md: 1rem;
@@ -45,6 +46,10 @@ body {
     color: var(--text-color);
     background-color: var(--secondary-color);
     line-height: 1.6;
+}
+
+.fonts-loaded body {
+    font-family: 'Merriweather', serif;
 }
 
 .payment-container {
