@@ -19,14 +19,17 @@ async function searchReceipts() {
     searchBtn.textContent = 'Searching...';
     
     try {
-        const params = new URLSearchParams({
-            matnumber: matnumber || '',
-            fullname: fullname || '',
-            email: email || '',
-            phone: phone || ''
+        const formData = new FormData();
+        formData.append('matnumber', matnumber);
+        formData.append('fullname', fullname);
+        formData.append('email', email);
+        formData.append('phone', phone);
+        
+        const response = await fetch('/search/receipts', {
+            method: 'POST',
+            body: formData
         });
         
-        const response = await fetch(`/search/receipts?${params}`);
         const { success, receipts, message } = await response.json();
         
         if (success) {
@@ -41,7 +44,7 @@ async function searchReceipts() {
         searchBtn.disabled = false;
         searchBtn.textContent = 'Search Receipts';
     }
-}
+} 
 
 function displayReceipts(receipts) {
     const resultsContainer = document.getElementById('receiptResults');
