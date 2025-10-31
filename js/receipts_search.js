@@ -55,11 +55,7 @@ function displayReceipts(receipts) {
         resultsContainer.innerHTML = '<div class="no-receipts">No receipts found matching your search criteria</div>';
         return;
     }
-    // Scroll the results into view smoothly
-    document.getElementById('receiptResults').scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-    });
+    document.getElementById('receiptSearchForm').scrollIntoView();
     resultsContainer.innerHTML = receipts.map(receipt => `
         <div class="receipt-item">
             <div class="receipt-name">${receipt.fullname}</div>
