@@ -1,6 +1,8 @@
-document.getElementById('receiptSearchForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    searchReceipts();
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('receiptSearchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        searchReceipts();
+    });
 });
 
 async function searchReceipts() {
@@ -44,7 +46,7 @@ async function searchReceipts() {
         searchBtn.disabled = false;
         searchBtn.textContent = 'Search Receipts';
     }
-} 
+}
 
 function displayReceipts(receipts) {
     const resultsContainer = document.getElementById('receiptResults');
