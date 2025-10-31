@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         formData.institution_id = null;
         
-        if (query.length < 3) {
+        if (query.length < 2) {
             suggestionsContainer.innerHTML = '';
             suggestionsContainer.style.display = 'none';
             return;
