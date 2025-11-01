@@ -49,7 +49,7 @@ async function verifyARN() {
     try {
         const response = await fetch(`/ajax/verify/${arn}`);
         const result = await response.json();
-        
+        return;
         if (result.success) {
             showVerifyResult(result, arn);
         } else {
