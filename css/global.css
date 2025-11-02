@@ -386,7 +386,7 @@ hr {
 .footer-links {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 3px;
 }
 
 .link-group {
