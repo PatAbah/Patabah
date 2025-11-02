@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const subject = `Support Request from ${name}`;
         const body = `Name: ${name}\nPhone: ${phone}\n\nMessage:\n${message}`;
         
-        const mailtoLink = `mailto:{{ support_email }}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const mailtoLink = `mailto:Alutapaytech@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
         window.location.href = mailtoLink;
     });
