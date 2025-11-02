@@ -370,7 +370,6 @@ hr {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-sm);
 }
 
 .footer-logo-img {
