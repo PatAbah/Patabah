@@ -352,13 +352,15 @@ hr {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    text-align: left;
+    text-align: center;
+    align-items: center;
 }
 
 .footer-bottom {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     gap: var(--spacing-md);
 }
 
@@ -387,6 +389,7 @@ hr {
     display: flex;
     flex-direction: column;
     gap: 3px;
+    align-items: flex-start;
 }
 
 .link-group {
@@ -407,23 +410,6 @@ hr {
     color: white;
     text-decoration: underline;
 }
-
-    .footer-top {
-        text-align: center;
-        align-items: center;
-    }
-    
-    .footer-bottom {
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-xl);
-    }
-    
-    .footer-links {
-        align-items: flex-start;
-    }
-
 
 .suggestions-container {
     position: relative;
