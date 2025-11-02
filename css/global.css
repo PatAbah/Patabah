@@ -67,6 +67,7 @@ body {
     flex-direction: column;
     gap: var(--spacing-md);
     box-shadow: var(--shadow-medium);
+    border-bottom: 1px solid var(--logo-accent-color);
 }
 
 .logo-container {
