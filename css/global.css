@@ -400,7 +400,7 @@ hr {
     font-weight: 600;
     text-decoration: none;
     transition: all var(--transition-fast);
-    padding: var(--spacing-xs) 0;
+    padding: 2px 0;
 }
 
 .footer-link:hover {
