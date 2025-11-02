@@ -360,8 +360,8 @@ hr {
 .footer-bottom {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: top;
+    align-items: flex-start;
+    justify-content: center;
     gap: var(--spacing-md);
 }
 
