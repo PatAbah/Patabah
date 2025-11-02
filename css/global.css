@@ -365,8 +365,8 @@ hr {
 .footer-logo {
     border: 3px solid white;
     border-radius: 50%;
-    width: 80px;
-    height: 80px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -397,7 +397,7 @@ hr {
 }
 
 .footer-link {
-    color: #c4dcfd;
+    color: #e4efff;
     font-weight: 600;
     text-decoration: none;
     transition: all var(--transition-fast);
