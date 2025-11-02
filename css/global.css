@@ -41,7 +41,33 @@
     padding: 0;
     box-sizing: border-box;
 }
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+    display: inline-block;
+}
 
+a:hover {
+    color: var(--primary-dark);
+}
+
+a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+a:hover::after {
+    width: 100%;
+}  
 body {
     font-family: var(--font-family);
     color: var(--text-color);
