@@ -438,6 +438,23 @@ hr {
     text-decoration: underline;
 }
 
+@media (min-width: 1024px) {
+    .footer-bottom {
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+    
+    .footer-links {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--spacing-lg);
+    }
+    
+    .link-group {
+        gap: var(--spacing-lg);
+    }
+}  
 .suggestions-container {
     position: relative;
     background-color: #f7fcf3;
