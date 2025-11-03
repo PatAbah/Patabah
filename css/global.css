@@ -455,6 +455,7 @@ hr {
         gap: var(--spacing-lg);
     }
 }  
+
 .suggestions-container {
     position: relative;
     background-color: #f7fcf3;
