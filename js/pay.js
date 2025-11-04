@@ -373,7 +373,8 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
     .catch(error => {
         console.error('Error:', error);
         alert(`An error occurred while processing your request: ${error}`);
-        
+        document.body.innerHTML += `An error occurred while processing your request: ${error}`;
+
         if (isGenerateInvoice && generateInvoiceBtn) {
             const originalText = generateInvoiceBtn.getAttribute('data-original-text');
             generateInvoiceBtn.innerHTML = originalText;
