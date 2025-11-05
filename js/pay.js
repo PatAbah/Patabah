@@ -322,107 +322,40 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
         const originalText = generateInvoiceBtn.innerHTML;
         generateInvoiceBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Generating...';
         generateInvoiceBtn.disabled = true;
-        
         generateInvoiceBtn.setAttribute('data-original-text', originalText);
     }
     
-    const formData = new FormData();
-    formData.append('institution', institution);
-    formData.append('institution_id', currentInstitutionId);
-    formData.append('association', association);
-    formData.append('fullname', fullname);
-    formData.append('matnumber', matnumber);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('amount', amount);
-    if (category) formData.append('category', category);
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = submitEndpoint;
+    form.style.display = 'none';
     
-    // Add a flag to indicate this is an invoice generation request
-    if (isGenerateInvoice) {
-        formData.append('generate_invoice', 'true');
-    }
+    const fields = {
+        'institution': institution,
+        'institution_id': currentInstitutionId,
+        'association': association,
+        'fullname': fullname,
+        'matnumber': matnumber,
+        'email': email,
+        'phone': phone,
+        'amount': amount
+    };
     
-    return fetch(submitEndpoint, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        // First, get the response as text
-        return response.text().then(text => {
-            try {
-                // Try to parse as JSON
-                const data = JSON.parse(text);
-                return {
-                    data: data,
-                    text: text,
-                    isJson: true
-                };
-            } catch (e) {
-                // If parsing fails, return the text
-                return {
-                    text: text,
-                    isJson: false,
-                    parseError: e
-                };
-            }
-        });
-    })
-    .then(result => {
-        if (isGenerateInvoice && generateInvoiceBtn) {
-            const originalText = generateInvoiceBtn.getAttribute('data-original-text');
-            generateInvoiceBtn.innerHTML = originalText;
-            generateInvoiceBtn.disabled = false;
-        }
-        
-        if (result.isJson) {
-            if (result.data.success) {
-                if (isGenerateInvoice) {
-                    if (result.data.invoice_callback) {
-                        window.location.href = result.data.invoice_callback;
-                    } else {
-                        alert('Invoice generated but no redirect URL provided');
-                        console.log('Invoice data:', result.data);
-                    }
-                } else {
-                    window.location.href = result.data.authorization_url;
-                }
-            } else {
-                alert('Request failed: ' + result.data.message);
-            }
-        } else {
-            // Show the raw server response when JSON parsing fails
-            console.error('JSON parse error:', result.parseError);
-            alert('Server response (raw): ' + result.text);
-        }
-        
-        return result.isJson ? result.data : result.text;
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        
-        // Enhanced error reporting
-        let errorDetails = `An error occurred while processing your request.\n\n`;
-        
-        if (error.name === 'TypeError') {
-            errorDetails += 'This might be a network issue or CORS problem.';
-        } else if (error.message) {
-            errorDetails += `Details: ${error.message}`;
-        }
-        
-        if (error.stack) {
-            console.error('Full error stack:', error.stack);
-        }
-        
-        alert(errorDetails);
+    if (category) fields['category'] = category;
+    if (isGenerateInvoice) fields['generate_invoice'] = 'true';
     
-        if (isGenerateInvoice && generateInvoiceBtn) {
-            const originalText = generateInvoiceBtn.getAttribute('data-original-text');
-            generateInvoiceBtn.innerHTML = originalText;
-            generateInvoiceBtn.disabled = false;
-        }
-        
-        throw error;
+    Object.keys(fields).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
     });
+    
+    document.body.appendChild(form);
+    form.submit();
+    
+    return true;
 }
 
 // Original form submit handler
