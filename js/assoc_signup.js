@@ -5,6 +5,7 @@ let formData = {
     association_email: '',
     bank_name: '',
     account_number: '',
+    account_name: '',
     fees: {},
     president_name: '',
     president_phone: ''
@@ -130,6 +131,7 @@ function populateReview() {
     document.getElementById('review-association-email').textContent = formData.association_email;
     document.getElementById('review-bank-name').textContent = formData.bank_name;
     document.getElementById('review-account-number').textContent = formData.account_number;
+    document.getElementById('review-account-name').textContent = formData.account_name;
     document.getElementById('review-president').textContent = formData.president_name;
     document.getElementById('review-phone').textContent = formData.president_phone;
 
@@ -263,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         formData.institution_id = null;
         
-        if (query.length < 2) {
+        if (query.length < 3) {
             suggestionsContainer.innerHTML = '';
             suggestionsContainer.style.display = 'none';
             return;
