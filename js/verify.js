@@ -84,17 +84,18 @@ function showVerifyResult(result, arn=false) {
                     Authentic
                 </div>
                 <div>
-                    Code: ${(() => {
+                    ${(() => {
                       const s = result.payment.transfer_status;
                       const isSent = s === 'sent';
                       const color = isSent ? 'green' : '#f0c505';
                       const text = isSent ? 'Green' : 'Yellow';
                       const glow = isSent 
-                        ? '0 0 8px #0f0, 0 0 16px #0f0' 
-                        : '0 0 8px #f0c505, 0 0 16px #ff0';
-                      return `<table style="display:inline-table;border-collapse:collapse;line-height:1;"><tr>
-                        <td style="padding:0;vertical-align:middle;"><span style="color:${color};font-size:36px;text-shadow:${glow}">●</span></td>
-                        <td style="padding:0 0 0 6px;vertical-align:middle;font-size:18px;">${text}</td>
+                        ? '0 0 3px #0f0, 0 0 5px #0f0' 
+                        : '0 0 3px #f0c505, 0 0 5px #ff0';
+                      return `<table style="display:inline-table;border-collapse:collapse;font-size:16px;"><tr>
+                        <td valign="center" style="padding:0 6px 0 0;white-space:nowrap;">Code:</td>
+                        <td valign="center" style="padding:0;"><span style="color:${color};font-size:26px;text-shadow:${glow}">●</span></td>
+                        <td valign="center" style="padding:0 0 0 6px;">${text}</td>
                       </tr></table>`;
                     })()}
                 </div>
