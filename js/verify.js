@@ -87,7 +87,7 @@ function showVerifyResult(result, arn=false) {
                     Code: ${(() => {
                       const s = result.payment.transfer_status;
                       const isSent = s === 'sent';
-                      const color = isSent ? 'green' : 'gold';
+                      const color = isSent ? 'green' : '#f0c505';
                       const text = isSent ? 'Green' : 'Yellow';
                       const glow = isSent 
                         ? '0 0 12px #0f0, 0 0 24px #0f0' 
