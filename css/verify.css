@@ -75,7 +75,7 @@
     color: var(--success-color);
     font-weight: bold;
     font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
     Padding: 6px var(--spacing-sm);
     border: 1px solid #90ff90d6;
     background-color: #e1fee1d6;
