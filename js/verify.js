@@ -83,12 +83,19 @@ function showVerifyResult(result, arn=false) {
                     </svg>
                     Authentic
                 </div>
-                <small>Code: ${(() => {
-                  const status = result.payment.transfer_status;
-                  const color = status === 'sent' ? 'green' : 'gold';
-                  return `<span style="color:${color}">&bull;</span> ${status || 'pending'}`;
-                })()}
+                <small>
+                    Code: ${(() => {
+                      const s = result.payment.transfer_status;
+                      const isSent = s === 'sent';
+                      const color = isSent ? 'green' : 'gold';
+                      const text = isSent ? 'Green' : 'Yellow';
+                      const glow = isSent 
+                        ? '0 0 8px #0f0, 0 0 16px #0f0' 
+                        : '0 0 8px gold, 0 0 16px #ff0';
+                      return `<span style="color:${color};font-size:20px;text-shadow:${glow}">&bull;</span> ${text}`;
+                    })()}
                 </small>
+                <br>
                 <small>Please confirm you're on our site: <br>${(() => window.location.href.split('/').slice(0,3).join('/'))()}</small>
             </div>
             
