@@ -90,9 +90,9 @@ function showVerifyResult(result, arn=false) {
                       const color = isSent ? 'green' : '#f0c505';
                       const text = isSent ? 'Green' : 'Yellow';
                       const glow = isSent 
-                        ? '0 0 12px #0f0, 0 0 24px #0f0' 
-                        : '0 0 12px gold, 0 0 24px #ff0';
-                      return `<span style="color:${color};font-size:36px;line-height:1;text-shadow:${glow}">&bull;</span> ${text}`;
+                        ? '0 0 16px #0f0, 0 0 32px #0f0' 
+                        : '0 0 16px gold, 0 0 32px #ff0';
+                      return `<span style="display:inline-block;vertical-align:middle;line-height:1;"><span style="color:${color};font-size:108px;text-shadow:${glow}">●</span><span style="vertical-align:middle;font-size:18px;margin-left:8px;">${text}</span></span>`;
                     })()}
                 </div>
                 <br>
