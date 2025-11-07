@@ -92,7 +92,7 @@ function showVerifyResult(result, arn=false) {
                       const glow = isSent 
                         ? '0 0 16px #0f0, 0 0 32px #0f0' 
                         : '0 0 16px gold, 0 0 32px #ff0';
-                      return `<span style="display:inline-block;vertical-align:middle;line-height:1;"><span style="color:${color};font-size:108px;text-shadow:${glow}">●</span><span style="vertical-align:middle;font-size:18px;margin-left:8px;">${text}</span></span>`;
+                      return `<span style="display:inline-block;vertical-align:middle;line-height:1;"><span style="color:${color};font-size:36px;text-shadow:${glow}">●</span><span style="vertical-align:middle;font-size:18px;margin-left:8px;">${text}</span></span>`;
                     })()}
                 </div>
                 <br>
