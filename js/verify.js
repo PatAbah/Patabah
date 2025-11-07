@@ -49,6 +49,7 @@ async function verifyARN() {
     try {
         const response = await fetch(`/ajax/verify/${arn}`);
         const result = await response.json();
+        
         if (result.success) {
             showVerifyResult(result, arn);
         } else {
@@ -82,7 +83,12 @@ function showVerifyResult(result, arn=false) {
                     </svg>
                     Authentic
                 </div>
-                <small>Please confirm the address of this site: <br>${window.location.href}</small>
+                Code: ${(() => {
+                  const status = result.payment.transfer_status;
+                  const color = status === 'sent' ? 'green' : 'gold';
+                  return `<span style="color:${color}">&bull;</span> ${status || 'pending'}`;
+                })()}
+                <small>Please confirm you're on our site: <br>${(() => window.location.href.split('/').slice(0,3).join('/'))()}</small>
             </div>
             
             <div class="payment-info">
@@ -237,16 +243,9 @@ function formatDate(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const arn = urlParams.get('arn');
-    const invoice = urlParams.get('invoice');
     
-    if (arn) openVerifyModal(arn);
-    
-    if (invoice) {
-        tabBtns.forEach(tab => tab.classList.remove('active'));
-        tabPanes.forEach(pane => pane.classList.remove('active'));
-        Array.from(tabBtns).find(btn => btn.getAttribute('data-tab') === 'invoice')?.classList.add('active');
-        document.getElementById('invoice-tab').classList.add('active');
-        document.getElementById('invoice-number').value = invoice;
+    if (arn) {
+        openVerifyModal(arn);
     }
 });
 
