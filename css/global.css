@@ -362,6 +362,7 @@ hr {
 
 .payment-footer {
     background-color: var(--primary-color);
+    background-color: #3b372f;
     color: white;
     padding: var(--spacing-xl) var(--spacing-md);
     font-size: var(--font-size-sm);
