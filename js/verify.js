@@ -90,11 +90,14 @@ function showVerifyResult(result, arn=false) {
                       const color = isSent ? 'green' : '#f0c505';
                       const text = isSent ? 'Green' : 'Yellow';
                       const glow = isSent 
-                        ? '0 0 3px #0f0, 0 0 5px #0f0' 
-                        : '0 0 3px #f0c505, 0 0 5px #ff0';
+                        ? 'filter: drop-shadow(0 0 3px #0f0) drop-shadow(0 0 5px #0f0);'
+                        : 'filter: drop-shadow(0 0 3px #f0c505) drop-shadow(0 0 5px #ff0);';
+                      const svg = `<svg width="26" height="26" viewBox="0 0 26 26" style="display:inline-block;vertical-align:middle;${glow}">
+                        <circle cx="13" cy="13" r="11" fill="${color}" />
+                      </svg>`;
                       return `<table style="display:inline-table;border-collapse:collapse;font-size:16px;"><tr>
                         <td valign="center" style="padding:0 6px 0 0;white-space:nowrap;">Code:</td>
-                        <td valign="center" style="padding:0;"><span style="color:${color};font-size:26px;text-shadow:${glow}">●</span></td>
+                        <td valign="center" style="padding:0;">${svg}</td>
                         <td valign="center" style="padding:0 0 0 6px;">${text}</td>
                       </tr></table>`;
                     })()}
