@@ -6,46 +6,38 @@ function loadLogos(data) {
         },
         body: JSON.stringify({
             institution: data.institution,
-            associationId: data.associationId,
-            arn: data.arn
+            associationId: data.associationId
         })
     })
     .then(response => response.json())
     .then(logos => {
         const logoCircles = document.querySelectorAll('.logo-circle');
-        let logoIndex = 0;
-
-        if (logos.institutionLogo && logoCircles[logoIndex]) {
-            const img = new Image();
-            img.src = `data:image/jpeg;base64,${logos.institutionLogo}`;
+        
+        if (logos.institutionLogo && logoCircles[0]) {
+            const img = document.createElement('img');
+            img.src = logos.institutionLogo;
             img.alt = data.institution;
             img.className = 'logo-image';
-            img.onload = function() {
-                logoCircles[logoIndex].innerHTML = '';
-                logoCircles[logoIndex].appendChild(img);
-                logoCircles[logoIndex].classList.remove('loading-circle');
-            };
-            logoIndex++;
-        } else if (logoCircles[logoIndex]) {
-            logoCircles[logoIndex].remove();
+            logoCircles[0].innerHTML = '';
+            logoCircles[0].appendChild(img);
+            logoCircles[0].classList.remove('loading-circle');
+        } else if (logoCircles[0]) {
+            logoCircles[0].remove();
         }
 
-        if (logos.associationLogo && logoCircles[logoIndex]) {
-            const img = new Image();
-            img.src = logos.associationLogo; // Already a data URL from database
+        if (logos.associationLogo && logoCircles[1]) {
+            const img = document.createElement('img');
+            img.src = logos.associationLogo;
             img.alt = 'Association Logo';
             img.className = 'logo-image';
-            img.onload = function() {
-                logoCircles[logoIndex].innerHTML = '';
-                logoCircles[logoIndex].appendChild(img);
-                logoCircles[logoIndex].classList.remove('loading-circle');
-            };
-        } else if (logoCircles[logoIndex]) {
-            logoCircles[logoIndex].remove();
+            logoCircles[1].innerHTML = '';
+            logoCircles[1].appendChild(img);
+            logoCircles[1].classList.remove('loading-circle');
+        } else if (logoCircles[1]) {
+            logoCircles[1].remove();
         }
     })
     .catch(error => {
-        console.error('Error loading logos:', error);
         document.querySelectorAll('.logo-circle').forEach(circle => {
             circle.remove();
         });
