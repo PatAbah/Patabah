@@ -15,7 +15,6 @@ function loadLogos(data) {
         const logoCircles = document.querySelectorAll('.logo-circle');
         let logoIndex = 0;
 
-        // Handle institution logo
         if (logos.institutionLogo && logoCircles[logoIndex]) {
             const img = new Image();
             img.src = `data:image/jpeg;base64,${logos.institutionLogo}`;
@@ -28,11 +27,9 @@ function loadLogos(data) {
             };
             logoIndex++;
         } else if (logoCircles[logoIndex]) {
-            // Remove element if no institution logo
             logoCircles[logoIndex].remove();
         }
 
-        // Handle association logo
         if (logos.associationLogo && logoCircles[logoIndex]) {
             const img = new Image();
             img.src = logos.associationLogo; // Already a data URL from database
@@ -44,13 +41,11 @@ function loadLogos(data) {
                 logoCircles[logoIndex].classList.remove('loading-circle');
             };
         } else if (logoCircles[logoIndex]) {
-            // Remove element if no association logo
             logoCircles[logoIndex].remove();
         }
     })
     .catch(error => {
         console.error('Error loading logos:', error);
-        // Remove all loading circles on error
         document.querySelectorAll('.logo-circle').forEach(circle => {
             circle.remove();
         });
