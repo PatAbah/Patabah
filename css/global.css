@@ -43,7 +43,7 @@
 }
 a {
     color: var(--primary-color);
-    text-decoration: none;
+    text-decoration: none !important;
     font-weight: 500;
     transition: all 0.2s ease;
     position: relative;
@@ -73,6 +73,7 @@ body {
     color: var(--text-color);
     background-color: var(--secondary-color);
     line-height: 1.6;
+    font-size: 12px;
 }
 
 .fonts-loaded body {
