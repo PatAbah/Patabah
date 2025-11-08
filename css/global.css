@@ -167,7 +167,10 @@ body {
     font-size: var(--font-size-sm);
     padding: 4px 6px;
     transition: all var(--transition-fast);
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
 }
 
 .nav-link:hover {
@@ -178,6 +181,32 @@ body {
 .nav-link:active {
     background-color: rgba(255, 255, 255, 0.25);
     transform: scale(0.98);
+}
+
+.nav-link svg {
+    width: 16px;
+    height: 16px;
+    transition: all var(--transition-fast);
+}
+
+.nav-link svg path,
+.nav-link svg circle,
+.nav-link svg rect {
+    fill: none;
+    stroke: white;
+    stroke-width: 2;
+}
+
+.nav-link.active-nav svg path,
+.nav-link.active-nav svg circle,
+.nav-link.active-nav svg rect {
+    fill: white;
+    stroke: none;
+}
+.nav-link.active-nav svg circle[r="0.5"] {
+    fill: var(--primary-dark);
+    stroke: var(--primary-dark);
+    stroke-width: 3;
 }
 
 .payment-main {
