@@ -1,15 +1,16 @@
 :root {
-    --primary-color: #d6570c;
-    --primary-light: #534bae;
-    --primary-dark: #000051;
-    --secondary-color: #f5f5f5;
-    --accent-color: #b48500;
-    --logo-accent-color: #f7df93;
-    --text-color: #333333;
-    --text-light: #666666;
-    --border-color: #dddddd;
-    --error-color: #d32f2f;
-    --success-color: #388e3c;
+    --primary-color: linear-gradient(135deg, #d6570c 0%, #ff7a2f 100%);
+            --primary-light: linear-gradient(135deg, #534bae 0%, #7d75d6 100%);
+            --primary-dark: linear-gradient(135deg, #000051 0%, #1a1a7a 100%);
+            --secondary-color: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+            --accent-color: linear-gradient(135deg, #b48500 0%, #d9a520 100%);
+            --logo-accent-color: linear-gradient(135deg, #f7df93 0%, #ffeab3 100%);
+            --text-color: linear-gradient(135deg, #333333 0%, #4d4d4d 100%);
+            --text-light: linear-gradient(135deg, #666666 0%, #808080 100%);
+            --border-color: linear-gradient(135deg, #dddddd 0%, #eeeeee 100%);
+            --error-color: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
+            --success-color: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+  
     /*--font-family: "Merriweather", sans-serif, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;*/
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
     --font-size-xs: 0.75rem;
