@@ -22,8 +22,7 @@
 
 .receipt-item, .invoice-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     transition: background-color var(--transition-fast);
@@ -35,6 +34,11 @@
 
 .receipt-item:last-child, .invoice-item:last-child {
     border-bottom: none;
+}
+
+.receipt-info, .invoice-info {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
 }
 
 .receipt-name, .invoice-name {
@@ -57,10 +61,13 @@
 
 .download-form {
     margin: 0;
+    width: 100%;
 }
 
 .download-btn {
-    color: var(--primary-color);
+    width: 100%;
+    background: var(--primary-color);
+    color: white;
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius);
@@ -81,11 +88,22 @@
 }
 
 @media (min-width: 769px) {
+    .receipt-item, .invoice-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
     .receipt-info, .invoice-info {
         flex: 1;
-    } 
-    .download-btn {
-        background: var(--primary-color);
-        color: white;
+        margin-bottom: 0;
     }
-} 
+    
+    .download-form {
+        width: auto;
+    }
+    
+    .download-btn {
+        width: auto;
+    }
+}
