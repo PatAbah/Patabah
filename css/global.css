@@ -509,7 +509,7 @@ hr {
     border-radius: 0 0 8px 8px;
     width: 100%;
     max-width: 300px;
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 1000;
