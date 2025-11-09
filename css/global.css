@@ -73,7 +73,7 @@ body {
     color: var(--text-color);
     background-color: var(--secondary-color);
     line-height: 1.6;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .fonts-loaded body {
@@ -95,6 +95,7 @@ body {
     gap: var(--spacing-md);
     box-shadow: var(--shadow-medium);
     border-bottom: 2px solid var(--logo-accent-color);
+    padding-bottom: 1px;
 }
 
 .logo-container {
