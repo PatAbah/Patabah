@@ -7,6 +7,7 @@
     color: var(--primary-color);
     margin-bottom: var(--spacing-md);
     font-size: var(--font-size-xl);
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: var(--spacing-sm);
 }
 
@@ -36,10 +37,6 @@
     border-bottom: none;
 }
 
-.receipt-info, .invoice-info {
-    flex: 1;
-}
-
 .receipt-name, .invoice-name {
     font-weight: 600;
     color: var(--text-color);
@@ -63,8 +60,7 @@
 }
 
 .download-btn {
-    background: var(--primary-color);
-    color: white;
+    color: var(--primary-color);
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--border-radius);
@@ -83,3 +79,13 @@
     padding: var(--spacing-xl);
     font-style: italic;
 }
+
+@media (min-width: 769px) {
+    .receipt-info, .invoice-info {
+        flex: 1;
+    } 
+    .download-btn {
+        background: var(--primary-color);
+        color: white;
+    }
+} 
