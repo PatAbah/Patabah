@@ -95,7 +95,7 @@ body {
     gap: var(--spacing-md);
     box-shadow: var(--shadow-medium);
     border-bottom: 2px solid var(--logo-accent-color);
-    padding-bottom: 1px;
+    padding-bottom: 1px !important;
 }
 
 .logo-container {
