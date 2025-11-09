@@ -171,6 +171,20 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    padding-bottom: 8px;
+}
+
+.active-nav::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; /* Starts where border-bottom would be */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--logo-accent-color);
 }
 
 .nav-link:hover {
@@ -587,6 +601,7 @@ ul ul ul {
     list-style-type: square;
 }
 .active-nav {
+    position: relative;
     font-weight: bold;
 }
 
@@ -624,6 +639,7 @@ ul ul ul {
         width: 100%;
         max-width: 1000px;
         padding: var(--spacing-md);
+        padding-bottom: 1px;
     }
     .nav-menu {
         width: 100%;
