@@ -587,9 +587,7 @@ ul ul ul {
     list-style-type: square;
 }
 .active-nav {
-    border-bottom: 1px solid white;
     font-weight: bold;
-    /*border-radius: 0 0 2px 2px; */
 }
 
 .notification-zone {
