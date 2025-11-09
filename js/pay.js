@@ -14,29 +14,20 @@ let currentFees = null;
 let SERVICE_CHARGE = 0;
 let selectedAmount = 0;
 let endpoint = '/init-payment';
+let institutionsCache = null;
 
 async function getTotalAmount(inputAmount) {
     const formFeeData = new FormData();
     formFeeData.append('amount', inputAmount);
     try {
-        const response = await fetch('/api/service-fee', {
-            method: 'POST',
-            body: formFeeData
-        });
+        const response = await fetch('/api/service-fee', { method: 'POST', body: formFeeData });
         const data = await response.json();
         console.log(data);
         return data.fee;
     } catch(error) {
         const summaryBoxes = document.querySelectorAll('.summary-box');
         const lastSummaryBox = summaryBoxes[summaryBoxes.length - 1];
-        lastSummaryBox.innerHTML = `
-            <div class="summary-content">
-                <div class="summary-row">
-                    <span>Error fetching service charge. Your internet connection is probably broken.</span>
-                    <span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span>
-                </div>
-            </div>
-        `;
+        lastSummaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Error fetching service charge. Your internet connection is probably broken.</span><span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span></div></div>`;
         document.querySelector('.submit-btn').style.display = 'none';
         document.getElementById('tos').style.display = 'none';
         document.getElementById('generateInvoice').style.display = 'none';
@@ -45,11 +36,7 @@ async function getTotalAmount(inputAmount) {
 }
 
 function updatePaymentButton(totalAmount = null) {
-    if (totalAmount !== null) {
-        submitBtn.innerHTML = `Pay <strong>₦${parseFloat(totalAmount).toLocaleString()}</strong>`;
-    } else {
-        submitBtn.textContent = 'Proceed to Payment';
-    }
+    submitBtn.innerHTML = totalAmount !== null ? `Pay <strong>₦${parseFloat(totalAmount).toLocaleString()}</strong>` : 'Proceed to Payment';
 }
 
 async function showSummaryBox(associationAmount, category = '') {
@@ -65,24 +52,13 @@ async function showSummaryBox(associationAmount, category = '') {
     }
     
     const categoryText = category ? ` (${category})` : '';
-    summaryBox.innerHTML = `
-        <div class="summary-content">
-            <div class="summary-row">
-                <span>Amount to pay:</span>
-                <span><strong>₦${totalAmount.toLocaleString()}</strong></span>
-            </div>
-            <div class="summary-note">Includes service charge</div>
-        </div>
-    `;
-    
+    summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Includes service charge</div></div>`;
     updatePaymentButton(totalAmount);
 }
 
 function clearSummaryBox() {
     const summaryBox = document.getElementById('summary-box');
-    if (summaryBox) {
-        summaryBox.remove();
-    }
+    if (summaryBox) summaryBox.remove();
     updatePaymentButton();
 }
 
@@ -90,49 +66,39 @@ tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         tabBtns.forEach(tab => tab.classList.remove('active'));
         tabPanes.forEach(pane => pane.classList.remove('active'));
-        
         btn.classList.add('active');
-        const tabId = btn.getAttribute('data-tab');
-        document.getElementById(`${tabId}-tab`).classList.add('active');
+        document.getElementById(`${btn.getAttribute('data-tab')}-tab`).classList.add('active');
     });
 });
 
-let debounceTimer;
-institutionInput.addEventListener('input', function() {
-    clearTimeout(debounceTimer);
-    const query = this.value.trim();
-    
-    associationInput.value = '';
-    associationInput.disabled = true;
-    associationInput.placeholder = "Select institution first";
-    associationSuggestionsContainer.innerHTML = '';
-    associationSuggestionsContainer.style.display = 'none';
-    amountContainer.innerHTML = '';
-    currentInstitutionId = null;
-    currentFees = null;
-    clearSummaryBox();
-    
-    if (query.length < 3) {
-        suggestionsContainer.innerHTML = '';
-        suggestionsContainer.style.display = 'none';
-        return;
+async function fetchInstitutions() {
+    if (institutionsCache) return institutionsCache;
+    try {
+        const response = await fetch('/api/institutions?q=');
+        institutionsCache = await response.json();
+        return institutionsCache;
+    } catch (error) {
+        console.error('Error fetching institutions:', error);
+        return [];
     }
-    
-    debounceTimer = setTimeout(() => {
-        (query.length > 2) && fetchInstitutions(query);
-    }, 150);
+}
+
+institutionInput.addEventListener('focus', async function() {
+    this.readOnly = true;
+    const institutions = await fetchInstitutions();
+    displayInstitutionSuggestions(institutions);
+});
+
+institutionInput.addEventListener('blur', function() {
+    setTimeout(() => this.readOnly = false, 200);
 });
 
 let associationDebounceTimer;
 associationInput.addEventListener('input', function() {
     if (!currentInstitutionId) return;
-    
     clearTimeout(associationDebounceTimer);
     const query = this.value.trim();
-    
-    associationDebounceTimer = setTimeout(() => {
-        fetchAssociations(query, currentInstitutionId);
-    }, 300);
+    associationDebounceTimer = setTimeout(() => fetchAssociations(query, currentInstitutionId), 300);
 });
 
 associationInput.addEventListener('focus', function() {
@@ -143,31 +109,15 @@ associationInput.addEventListener('focus', function() {
     }
 });
 
-function fetchInstitutions(query) {
-    fetch(`/api/institutions?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            displayInstitutionSuggestions(data);
-        })
-        .catch(error => {
-            console.error('Error fetching institutions:', error);
-        });
-}
-
 function fetchAssociations(query, institutionId) {
     fetch(`/api/associations?q=${encodeURIComponent(query)}&institution_id=${institutionId}`)
         .then(response => response.json())
-        .then(data => {
-            displayAssociationSuggestions(data);
-        })
-        .catch(error => {
-            console.error('Error fetching associations:', error);
-        });
+        .then(data => displayAssociationSuggestions(data))
+        .catch(error => console.error('Error fetching associations:', error));
 }
 
 function displayInstitutionSuggestions(institutions) {
     suggestionsContainer.innerHTML = '';
-    
     if (institutions.length === 0) {
         suggestionsContainer.style.display = 'none';
         return;
@@ -203,7 +153,6 @@ function displayInstitutionSuggestions(institutions) {
 
 function displayAssociationSuggestions(associations) {
     associationSuggestionsContainer.innerHTML = '';
-    
     if (associations.length === 0) {
         associationSuggestionsContainer.style.display = 'none';
         return;
@@ -252,15 +201,10 @@ function renderFeeOptions(fees) {
             const radioLabel = document.createElement('label');
             radioLabel.htmlFor = `fee_${category}`;
             radioLabel.className = 'fee-label';
-            radioLabel.innerHTML = `
-                <span class="fee-category">${category}</span>
-                <span class="fee-amount">₦${parseFloat(amount).toLocaleString()}</span>
-            `;
+            radioLabel.innerHTML = `<span class="fee-category">${category}</span><span class="fee-amount">₦${parseFloat(amount).toLocaleString()}</span>`;
             
             radioInput.addEventListener('change', function() {
-                if (this.checked) {
-                    showSummaryBox(amount, category);
-                }
+                if (this.checked) showSummaryBox(amount, category);
             });
             
             optionWrapper.appendChild(radioInput);
@@ -278,18 +222,13 @@ function renderFeeOptions(fees) {
         amountInput.disabled = true;
         amountInput.name = 'amount';
         amountContainer.appendChild(amountInput);
-        
         showSummaryBox(amount);
     }
 }
 
 document.addEventListener('click', function(e) {
-    if (!institutionInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-        suggestionsContainer.style.display = 'none';
-    }
-    if (!associationInput.contains(e.target) && !associationSuggestionsContainer.contains(e.target)) {
-        associationSuggestionsContainer.style.display = 'none';
-    }
+    if (!institutionInput.contains(e.target) && !suggestionsContainer.contains(e.target)) suggestionsContainer.style.display = 'none';
+    if (!associationInput.contains(e.target) && !associationSuggestionsContainer.contains(e.target)) associationSuggestionsContainer.style.display = 'none';
 });
 
 function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
@@ -330,16 +269,7 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
     form.action = submitEndpoint;
     form.style.display = 'none';
     
-    const fields = {
-        'institution': institution,
-        'institution_id': currentInstitutionId,
-        'association': association,
-        'fullname': fullname,
-        'matnumber': matnumber,
-        'email': email,
-        'phone': phone,
-        'amount': amount
-    };
+    const fields = { 'institution': institution, 'institution_id': currentInstitutionId, 'association': association, 'fullname': fullname, 'matnumber': matnumber, 'email': email, 'phone': phone, 'amount': amount };
     
     if (category) fields['category'] = category;
     if (isGenerateInvoice) fields['generate_invoice'] = 'true';
@@ -354,17 +284,14 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
     
     document.body.appendChild(form);
     form.submit();
-    
     return true;
 }
 
-// Original form submit handler
 billerForm.addEventListener('submit', function(e) {
     e.preventDefault();
     handleFormSubmission(endpoint, false);
 });
 
-// Generate invoice handler
 document.getElementById('generateInvoice').addEventListener('click', function(e){
     e.preventDefault();
     handleFormSubmission('/generate-invoice', true);
@@ -372,9 +299,8 @@ document.getElementById('generateInvoice').addEventListener('click', function(e)
 
 invoiceForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    const invoiceNumber = document.getElementById('invoice-number').value;    const payerEmail = document.getElementById('payer-email').value;
-    
+    const invoiceNumber = document.getElementById('invoice-number').value;
+    const payerEmail = document.getElementById('payer-email').value;
     if (!invoiceNumber) {
         alert('Please enter the ARN');
         return;
@@ -384,4 +310,5 @@ invoiceForm.addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     associationInput.disabled = true;
     associationInput.placeholder = "Select institution first";
+    fetchInstitutions();
 });
