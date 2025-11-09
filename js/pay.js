@@ -297,15 +297,152 @@ document.getElementById('generateInvoice').addEventListener('click', function(e)
     handleFormSubmission('/generate-invoice', true);
 });
 
-invoiceForm.addEventListener('submit', function(e) {
+const invoiceNumberInput = document.getElementById('invoice-number');
+const retrieveBtn = document.querySelector('#invoice-tab .submit-btn');
+let invoiceData = null;
+
+invoiceNumberInput.addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '');
+});
+
+invoiceForm.addEventListener('submit', async function(e) {
     e.preventDefault();
-    const invoiceNumber = document.getElementById('invoice-number').value;
-    const payerEmail = document.getElementById('payer-email').value;
+    const invoiceNumber = invoiceNumberInput.value.trim();
+    
     if (!invoiceNumber) {
         alert('Please enter the ARN');
         return;
     }
+
+    const originalBtnText = retrieveBtn.innerHTML;
+    const loadingGif = document.createElement('img');
+    loadingGif.src = '/static/img/loading.gif';
+    loadingGif.alt = 'Loading';
+    loadingGif.className = 'loading-gif';
+    loadingGif.style.cssText = 'height: 20px; margin-bottom: 10px;';
+    
+    retrieveBtn.parentNode.insertBefore(loadingGif, retrieveBtn);
+    retrieveBtn.innerHTML = 'Retrieving...';
+    retrieveBtn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('arn', invoiceNumber);
+        
+        const response = await fetch('/retrieve-invoice', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            invoiceData = result.data;
+            displayInvoiceDetails(result.data, invoiceNumber);
+        } else {
+            alert(result.message || 'Invoice not found');
+            loadingGif.remove();
+            retrieveBtn.innerHTML = originalBtnText;
+            retrieveBtn.disabled = false;
+        }
+    } catch (error) {
+        alert('Error retrieving invoice. Please try again.');
+        loadingGif.remove();
+        retrieveBtn.innerHTML = originalBtnText;
+        retrieveBtn.disabled = false;
+    }
 });
+
+function displayInvoiceDetails(data, arn) {
+    const loadingGif = document.querySelector('.loading-gif');
+    if (loadingGif) loadingGif.remove();
+    
+    let detailsContainer = document.getElementById('invoice-details-container');
+    if (!detailsContainer) {
+        detailsContainer = document.createElement('div');
+        detailsContainer.id = 'invoice-details-container';
+        invoiceForm.appendChild(detailsContainer);
+    }
+    
+    const categoryRow = data.category ? `<div class="detail-row"><span class="detail-label">Category:</span><span class="detail-value">${data.category}</span></div>` : '';
+    
+    detailsContainer.innerHTML = `
+        <div class="payment-details">
+            <div class="detail-row">
+                <span class="detail-label">ARN:</span>
+                <span class="detail-value reference">${arn}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Institution:</span>
+                <span class="detail-value">${data.institution}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Association:</span>
+                <span class="detail-value">${data.association}</span>
+            </div>
+            ${categoryRow}
+            <div class="detail-row">
+                <span class="detail-label">Amount:</span>
+                <span class="detail-value">₦${parseFloat(data.amount).toLocaleString()}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">${data.fullname}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Matric Number:</span>
+                <span class="detail-value">${data.matnumber}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">${data.email}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">${data.phone}</span>
+            </div>
+        </div>
+    `;
+    
+    retrieveBtn.innerHTML = `Pay <strong>₦${parseFloat(data.amount).toLocaleString()}</strong>`;
+    retrieveBtn.disabled = false;
+    retrieveBtn.onclick = function(e) {
+        e.preventDefault();
+        payInvoice(data, arn);
+    };
+}
+
+function payInvoice(data, arn) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/init-payment';
+    form.style.display = 'none';
+    
+    const fields = {
+        'institution': data.institution,
+        'institution_id': data.institution_id,
+        'association': data.association,
+        'fullname': data.fullname,
+        'matnumber': data.matnumber,
+        'email': data.email,
+        'phone': data.phone,
+        'amount': data.amount,
+        'arn': arn
+    };
+    
+    if (data.category) fields['category'] = data.category;
+    
+    Object.keys(fields).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     associationInput.disabled = true;
