@@ -7,7 +7,6 @@
     color: var(--primary-color);
     margin-bottom: var(--spacing-md);
     font-size: var(--font-size-xl);
-    border-bottom: 2px solid var(--border-color);
     padding-bottom: var(--spacing-sm);
 }
 
