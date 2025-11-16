@@ -98,7 +98,7 @@
 .payment-info {
     background: var(--secondary-color);
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
 }
 
@@ -108,7 +108,7 @@
 }
 
 .amount-value {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: bold;
     color: var(--primary-color);
     margin: var(--spacing-sm) 0;
