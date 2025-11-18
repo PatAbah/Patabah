@@ -1,4 +1,3 @@
-// Global variables
 let currentPage = 1;
 const pageSize = 5;
 let currentSearch = '';
@@ -8,19 +7,41 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeDashboard() {
-    document.getElementById('searchPayments').addEventListener('input', debounce(searchPayments, 300));
-    document.getElementById('prevPage').addEventListener('click', goToPreviousPage);
-    document.getElementById('nextPage').addEventListener('click', goToNextPage);
-    document.getElementById('changeAdminForm').addEventListener('submit', handleChangeAdmin);
-    document.getElementById('exportForm').addEventListener('submit', handleExport);
-    document.getElementById('otherOfficialsForm').addEventListener('submit', handleOtherOfficials);
-    document.getElementById('logoForm').addEventListener('submit', handleLogo);
+    const searchPayments = document.getElementById('searchPayments');
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
+    const changeAdminForm = document.getElementById('changeAdminForm');
+    const exportForm = document.getElementById('exportForm');
+    const otherOfficialsForm = document.getElementById('otherOfficialsForm');
+    const logoForm = document.getElementById('logoForm');
     
-    // Load initial data
-    loadPayments();
+    if (searchPayments) {
+        searchPayments.addEventListener('input', debounce(searchPayments, 300));
+    }
+    if (prevPage) {
+        prevPage.addEventListener('click', goToPreviousPage);
+    }
+    if (nextPage) {
+        nextPage.addEventListener('click', goToNextPage);
+    }
+    if (changeAdminForm) {
+        changeAdminForm.addEventListener('submit', handleChangeAdmin);
+    }
+    if (exportForm) {
+        exportForm.addEventListener('submit', handleExport);
+    }
+    if (otherOfficialsForm) {
+        otherOfficialsForm.addEventListener('submit', handleOtherOfficials);
+    }
+    if (logoForm) {
+        logoForm.addEventListener('submit', handleLogo);
+    }
+    
+    if (document.querySelector('#paymentsTable')) {
+        loadPayments();
+    }
 }
 
-// Logout function
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
         fetch('/ajax/dashboard/logout', {
@@ -65,7 +86,6 @@ function closeChangeAdminModal() {
 }
 
 function openExportModal() {
-    // Set default dates (last 30 days)
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
@@ -80,7 +100,6 @@ function closeExportModal() {
     document.getElementById('exportForm').reset();
 }
 
-// Close modals when clicking outside
 window.addEventListener('click', function(e) {
     const changeAdminModal = document.getElementById('changeAdminModal');
     const otherOfficialsModal = document.getElementById('otherOfficialsModal');
@@ -101,7 +120,6 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// Change Administration
 async function handleChangeAdmin(e) {
     e.preventDefault();
     
@@ -205,17 +223,15 @@ async function handleChangeAdmin(e) {
     }
 }
 
-// Function to copy access key to clipboard
 function copyAccessKey() {
     const accessKeyInput = document.getElementById('newAccessKeyDisplay');
     if (!accessKeyInput) return;
     
     accessKeyInput.select();
-    accessKeyInput.setSelectionRange(0, 99999); // For mobile devices
+    accessKeyInput.setSelectionRange(0, 99999);
     
     try {
         navigator.clipboard.writeText(accessKeyInput.value).then(() => {
-            // Show copied feedback
             const copyBtn = document.querySelector('button[onclick="copyAccessKey()"]');
             const originalText = copyBtn.textContent;
             copyBtn.textContent = 'Copied!';
@@ -227,7 +243,6 @@ function copyAccessKey() {
             }, 2000);
         });
     } catch (err) {
-        // Fallback for older browsers
         document.execCommand('copy');
         const copyBtn = document.querySelector('button[onclick="copyAccessKey()"]');
         const originalText = copyBtn.textContent;
@@ -241,7 +256,6 @@ function copyAccessKey() {
     }
 }
 
-// Payments Management
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -278,7 +292,8 @@ async function loadPayments() {
     const nextBtn = document.getElementById('nextPage');
     const pageInfo = document.getElementById('pageInfo');
     
-    // Show loading
+    if (!tableBody) return;
+    
     tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading...</td></tr>';
     
     try {
@@ -297,65 +312,47 @@ async function loadPayments() {
         const result = await response.json();
         
         if (result.success) {
-            displayPayments(result.payments);
-            updatePagination(result.hasMore);
+            displayPayments(result.payments || []);
+            updatePagination(result.hasMore || false);
         } else {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading payments</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading payments: ' + (result.message || 'Unknown error') + '</td></tr>';
         }
     } catch (error) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Network error</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Network error loading payments</td></tr>';
     }
+}
+
+function renderTransferStatus(status) {
+    const isSent = status === 'sent';
+    const color = isSent ? 'green' : '#f0c505';
+    const text = isSent ? 'Sent' : 'Pending';
+    const glow = isSent 
+        ? 'filter: drop-shadow(0 0 1.5px #0f0) drop-shadow(0 0 2.5px #0f0);'
+        : 'filter: drop-shadow(0 0 1.5px #f0c505) drop-shadow(0 0 2.5px #ff0);';
+    const svg = `<svg width="13" height="13" viewBox="0 0 13 13" style="display:inline-block;vertical-align:middle;${glow}">
+        <circle cx="6.5" cy="6.5" r="5.5" fill="${color}" />
+    </svg>`;
+    return `${svg} <span style="margin-left:6px;">${text}</span>`;
 }
 
 function displayPayments(payments) {
     const tableBody = document.querySelector('#paymentsTable tbody');
     
-    if (payments.length === 0) {
+    if (!payments || payments.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No payments found</td></tr>';
         return;
     }
     
     tableBody.innerHTML = payments.map(payment => `
         <tr>
-            <td>${escapeHtml(payment.fullname)}</td>
-            <td>${escapeHtml(payment.matnumber)}</td>
-            <td>${escapeHtml(payment.administration)}</td>
-            <td>₦${parseFloat(payment.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            <td>
-                ${(() => {
-                    const s = payment.transfer_status || '';  // ← Changed this line!
-                    const isSent = s === 'sent';
-                    const color = isSent ? 'green' : '#f0c505';
-                    const text = isSent ? 'Sent' : 'Pending';
-                    const glow = isSent 
-                        ? 'filter: drop-shadow(0 0 1.5px #0f0) drop-shadow(0 0 2.5px #0f0);'
-                        : 'filter: drop-shadow(0 0 1.5px #f0c505) drop-shadow(0 0 2.5px #ff0);';
-                    const svg = `<svg width="13" height="13" viewBox="0 0 13 13" style="display:inline-block;vertical-align:middle;${glow}">
-                        <circle cx="6.5" cy="6.5" r="5.5" fill="${color}" />
-                    </svg>`;
-                    return `${svg} <span style="margin-left:6px;">${text}</span>`;
-                })()}
-            </td>
+            <td>${escapeHtml(payment.fullname || 'N/A')}</td>
+            <td>${escapeHtml(payment.matnumber || 'N/A')}</td>
+            <td>${escapeHtml(payment.administration || 'N/A')}</td>
+            <td>₦${parseFloat(payment.amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>${renderTransferStatus(payment.transfer_status || '')}</td>
             <td>${formatDate(payment.created_at)}</td>
         </tr>
     `).join('');
-    /*
-    tableBody.innerHTML = payments.map(payment => `
-        <tr>
-            <td>${escapeHtml(payment.fullname)}</td>
-            <td class="arn-cell">${formatARN(payment.arn)}</td>
-            <td>${escapeHtml(payment.administration)}</td>
-            <td>₦${parseFloat(payment.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            <td>${formatDate(payment.created_at)}</td>
-            <td>
-                <form action="/download-receipt" method="POST" class="download-form">
-                    <input type="hidden" name="arn" value="${payment.arn}">
-                    <button type="submit" class="download-btn">📥</button>
-                </form>
-            </td>
-        </tr>
-    `).join('');
-    */
 }
 
 function updatePagination(hasMore) {
@@ -368,7 +365,6 @@ function updatePagination(hasMore) {
     pageInfo.textContent = `Page ${currentPage}`;
 }
 
-// Export functionality
 function exportPayments() {
     openExportModal();
 }
@@ -407,7 +403,6 @@ async function handleExport(e) {
         const result = await response.json();
         
         if (result.success) {
-            // Download the file
             const link = document.createElement('a');
             link.href = result.download_url;
             link.download = result.filename;
@@ -427,7 +422,6 @@ async function handleExport(e) {
     }
 }
 
-// Utility functions
 function escapeHtml(unsafe) {
     return unsafe
         .replace(/&/g, "&amp;")
@@ -438,82 +432,12 @@ function escapeHtml(unsafe) {
 }
 
 function formatARN(arn) {
-    // Format ARN with dashes every 3 digits
-    return arn.replace(/(\d{3})(?=\d)/g, '$1-');
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-
-// Update the formatARN function with proper error handling
-function formatARN(arn) {
     if (!arn || typeof arn !== 'string') {
         return 'N/A';
     }
-    
-    // Format ARN with dashes every 3 digits
     return arn.replace(/(\d{3})(?=\d)/g, '$1-');
 }
 
-// Also update the displayPayments function to handle missing data
-function displayPayments(payments) {
-    const tableBody = document.querySelector('#paymentsTable tbody');
-    
-    if (!payments || payments.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No payments found</td></tr>';
-        return;
-    }
-    
-    tableBody.innerHTML = payments.map(payment => `
-        <tr>
-            <td>${escapeHtml(payment.fullname || 'N/A')}</td>
-            <td>${escapeHtml(payment.matnumber || 'N/A')}</td>
-            <td>${escapeHtml(payment.administration || 'N/A')}</td>
-            <td>₦${parseFloat(payment.amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            <td>
-                ${(() => {
-                    const s = "{{ payment.transfer_status }}";
-                    const isSent = s === 'sent';
-                    const color = isSent ? 'green' : '#f0c505';
-                    const text = isSent ? 'Sent' : 'Pending';
-                    const glow = isSent 
-                        ? 'filter: drop-shadow(0 0 1.5px #0f0) drop-shadow(0 0 2.5px #0f0);'
-                        : 'filter: drop-shadow(0 0 1.5px #f0c505) drop-shadow(0 0 2.5px #ff0);';
-                    const svg = `<svg width="13" height="13" viewBox="0 0 13 13" style="display:inline-block;vertical-align:middle;${glow}">
-                        <circle cx="6.5" cy="6.5" r="5.5" fill="${color}" />
-                    </svg>`;
-                    return `${svg} <span style="margin-left:6px;">${text}</span>`;
-                })()}
-            </td>
-            <td>${formatDate(payment.created_at)}</td>
-        </tr>
-    `).join('');
-    /*
-    tableBody.innerHTML = payments.map(payment => `
-        <tr>
-            <td>${escapeHtml(payment.fullname || 'N/A')}</td>
-            <td class="arn-cell">${formatARN(payment.arn)}</td>
-            <td>${escapeHtml(payment.administration || 'N/A')}</td>
-            <td>₦${parseFloat(payment.amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-            <td>${formatDate(payment.created_at)}</td>
-            <td>
-                <form action="/download-receipt" method="POST" class="download-form">
-                    <input type="hidden" name="arn" value="${payment.arn || ''}">
-                    <button type="submit" class="download-btn">📥</button>
-                </form>
-            </td>
-        </tr>
-    `).join('');
-    */
-}
-
-// Update the formatDate function to handle missing dates
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     
@@ -526,76 +450,5 @@ function formatDate(dateString) {
         });
     } catch (e) {
         return 'Invalid Date';
-    }
-}
-
-// Update the loadPayments function with better error handling
-async function loadPayments() {
-    const tableBody = document.querySelector('#paymentsTable tbody');
-    const prevBtn = document.getElementById('prevPage');
-    const nextBtn = document.getElementById('nextPage');
-    const pageInfo = document.getElementById('pageInfo');
-    
-    // Only run if we're on a page with payments table
-    if (!tableBody) return;
-    
-    // Show loading
-    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading...</td></tr>';
-    
-    try {
-        const response = await fetch('/ajax/dashboard/payments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                page: currentPage,
-                search: currentSearch,
-                pageSize: pageSize
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            displayPayments(result.payments || []);
-            updatePagination(result.hasMore || false);
-        } else {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading payments: ' + (result.message || 'Unknown error') + '</td></tr>';
-        }
-    } catch (error) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Network error loading payments</td></tr>';
-    }
-}
-
-// Update the initializeDashboard function to check for elements
-function initializeDashboard() {
-    // Only initialize if we're on the dashboard page
-    const searchPayments = document.getElementById('searchPayments');
-    const prevPage = document.getElementById('prevPage');
-    const nextPage = document.getElementById('nextPage');
-    const changeAdminForm = document.getElementById('changeAdminForm');
-    const exportForm = document.getElementById('exportForm');
-    
-    // Add event listeners only if elements exist
-    if (searchPayments) {
-        searchPayments.addEventListener('input', debounce(searchPayments, 300));
-    }
-    if (prevPage) {
-        prevPage.addEventListener('click', goToPreviousPage);
-    }
-    if (nextPage) {
-        nextPage.addEventListener('click', goToNextPage);
-    }
-    if (changeAdminForm) {
-        changeAdminForm.addEventListener('submit', handleChangeAdmin);
-    }
-    if (exportForm) {
-        exportForm.addEventListener('submit', handleExport);
-    }
-    
-    // Load initial data only if we have the payments table
-    if (document.querySelector('#paymentsTable')) {
-        loadPayments();
     }
 }
