@@ -324,6 +324,7 @@ function displayPayments(payments) {
             <td>
                 ${(() => {
                     const s = "{{ payment.transfer_status }}";
+                    console.log("=>" +s);
                     const isSent = s === 'sent';
                     const color = isSent ? 'green' : '#f0c505';
                     const text = isSent ? 'Sent' : 'Pending';
