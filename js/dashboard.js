@@ -323,8 +323,7 @@ function displayPayments(payments) {
             <td>₦${parseFloat(payment.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td>
                 ${(() => {
-                    const s = "{{ payment.transfer_status }}";
-                    console.log("=>" +s);
+                    const s = payment.transfer_status || '';  // ← Changed this line!
                     const isSent = s === 'sent';
                     const color = isSent ? 'green' : '#f0c505';
                     const text = isSent ? 'Sent' : 'Pending';
