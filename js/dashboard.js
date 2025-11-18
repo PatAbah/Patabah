@@ -318,8 +318,24 @@ function displayPayments(payments) {
     tableBody.innerHTML = payments.map(payment => `
         <tr>
             <td>${escapeHtml(payment.fullname)}</td>
+            <td>${escapeHtml(payment.matnumber)}</td>
             <td>${escapeHtml(payment.administration)}</td>
             <td>₦${parseFloat(payment.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+            <td>
+                ${(() => {
+                    const s = "{{ payment.transfer_status }}";
+                    const isSent = s === 'sent';
+                    const color = isSent ? 'green' : '#f0c505';
+                    const text = isSent ? 'Sent' : 'Pending';
+                    const glow = isSent 
+                        ? 'filter: drop-shadow(0 0 1.5px #0f0) drop-shadow(0 0 2.5px #0f0);'
+                        : 'filter: drop-shadow(0 0 1.5px #f0c505) drop-shadow(0 0 2.5px #ff0);';
+                    const svg = `<svg width="13" height="13" viewBox="0 0 13 13" style="display:inline-block;vertical-align:middle;${glow}">
+                        <circle cx="6.5" cy="6.5" r="5.5" fill="${color}" />
+                    </svg>`;
+                    return `${svg} <span style="margin-left:6px;">${text}</span>`;
+                })()}
+            </td>
             <td>${formatDate(payment.created_at)}</td>
         </tr>
     `).join('');
