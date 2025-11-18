@@ -1,6 +1,6 @@
 // Global variables
 let currentPage = 1;
-const pageSize = 20;
+const pageSize = 5;
 let currentSearch = '';
 
 document.addEventListener('DOMContentLoaded', function() {
