@@ -1,5 +1,5 @@
 let currentPage = 1;
-const pageSize = 5;
+const pageSize = 30;
 let currentSearch = '';
 
 document.addEventListener('DOMContentLoaded', function() {
