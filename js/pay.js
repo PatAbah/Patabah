@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
     associationInput.placeholder = "Select institution first";
     fetchInstitutions();
     
-    // two
+    // Auto-fill from ?sn=shortname
     const params = new URLSearchParams(location.search);
     const sn = params.get('sn');
     if (!sn) return;
@@ -471,7 +471,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let settled = false;
     const close = () => { if (!settled) { settled = true; modal.remove(); } };
 
-    // 12-second hard timeout (way more than enough)
     const hardTimeout = setTimeout(() => {
         modal.innerHTML = `<div class="modal-content verify-modal" style="max-width:400px;">
             <div class="modal-body" style="text-align:center;padding:40px 20px;">
@@ -479,20 +478,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button onclick="location.reload()" class="submit-btn" style="margin:0 8px;">Retry</button>
                 <button onclick="this.closest('.modal').remove()" class="submit-btn" style="background:#999;">Close</button>
             </div></div>`;
-    }, 5000);
+    }, 8000);
 
     fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST', signal:AbortSignal.timeout(10000)})
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
-            if (data.association_name) {
-                associationInput.disabled = false;
-                institutionInput.disabled = false;
-                document.getElementById('institution').value = data.institution_name || '';
-                document.getElementById('association').value = data.association_name;
+            if (data.association_name && data.institution_id) {
+                institutionInput.value = data.institution_name || '';
+                associationInput.value = data.association_name;
+
                 currentInstitutionId = data.institution_id;
                 currentFees = JSON.parse(data.fees || '{}');
-                
+
+                // ←←←←←←←←←← CRITICAL: manually re-enable + trigger fee render
+                associationInput.disabled = false;
+                associationInput.placeholder = "Association";
+
                 renderFeeOptions(currentFees);
+
                 const first = document.querySelector('input[name="fee_category"]');
                 if (first) {
                     first.checked = true;
@@ -501,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         })
-        .catch(() => {}) // silently ignore any error
+        .catch(() => {})
         .finally(() => {
             clearTimeout(hardTimeout);
             close();
