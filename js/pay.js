@@ -470,19 +470,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let timeout = setTimeout(() => showRetry(), 25000);
 
     fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST'})
-        .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name) {
                 document.getElementById('institution').value = data.institution_name || '';
                 document.getElementById('association').value = data.association_name;
-                calculateFees();
+        
+                currentInstitutionId = data.institution_id;
+                currentFees = JSON.parse(data.fees || '{}');
+        
+                associationInput.disabled = false;
+                associationInput.placeholder = "Association";
+        
+                renderFeeOptions(currentFees);
+        
+                const firstFee = document.querySelector('input[name="fee_category"]');
+                if (firstFee) {
+                    firstFee.checked = true;
+                    const label = document.querySelector(`label[for="${firstFee.id}"] .fee-category`);
+                    showSummaryBox(firstFee.value, label?.textContent || '');
+                }
             }
         })
-        .catch(() => showRetry())
-        .finally(() => {
-            clearTimeout(timeout);
-            modal.remove();
-        });
 
     function showRetry() {
         modal.querySelector('.modal-body').innerHTML = `
