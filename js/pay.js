@@ -444,8 +444,50 @@ function payInvoice(data, arn) {
     form.submit();
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // one
     associationInput.disabled = true;
     associationInput.placeholder = "Select institution first";
     fetchInstitutions();
+    
+    // two
+    const params = new URLSearchParams(location.search);
+    const sn = params.get('sn');
+    if (!sn) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content verify-modal" style="max-width:400px;">
+            <div class="modal-body" style="text-align:center; padding:40px 20px;">
+                <img src="{{__statics}}/img/loading.gif" alt="Loading" class="loading-gif">
+                <p style="margin-top:20px; font-size:15px;">Automatically fetching details...</p>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+
+    let timeout = setTimeout(() => showRetry(), 25000);
+
+    fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST'})
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => {
+            if (data.association_name) {
+                document.getElementById('association').value = data.association_name;
+                document.getElementById('institution').value = data.institution_name || '';
+                calculateFees();
+            }
+        })
+        .catch(() => showRetry())
+        .finally(() => {
+            clearTimeout(timeout);
+            modal.remove();
+        });
+
+    function showRetry() {
+        modal.querySelector('.modal-body').innerHTML = `
+            <p style="margin-bottom:20px;">Could not fetch details automatically.</p>
+            <button onclick="location.reload()" class="submit-btn" style="margin:0 10px;">Retry</button>
+            <button onclick="${modal.remove()}" class="submit-btn" style="background:#999;">Close</button>`;
+    }
 });
