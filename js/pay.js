@@ -473,8 +473,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name) {
-                document.getElementById('association').value = data.association_name;
                 document.getElementById('institution').value = data.institution_name || '';
+                document.getElementById('association').value = data.association_name;
                 calculateFees();
             }
         })
