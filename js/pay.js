@@ -459,11 +459,29 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content verify-modal" style="max-width:400px;">
-            <div class="modal-body" style="text-align:center; padding:40px 20px;">
-                <img src="{{__statics}}/img/loading.gif" alt="Loading" class="loading-gif">
-                <p style="margin-top:20px; font-size:15px;">Automatically fetching details...</p>
+            <div class="modal-body" style="text-align:center; padding:50px 20px;">
+                <div style="
+                    width:44px;
+                    height:44px;
+                    border:5px solid #f3f3f3;
+                    border-top:5px solid var(--primary-color);
+                    border-radius:50%;
+                    animation:spin 0.9s linear infinite;
+                    margin:0 auto 20px;
+                "></div>
+                <p style="margin:0; font-size:15px; color:#555;">
+                    Automatically fetching details...
+                </p>
             </div>
-        </div>`;
+        </div>
+    
+        <style>
+            @keyframes spin {
+                0% { transform:rotate(0deg); }
+                100% { transform:rotate(360deg); }
+            }
+        </style>
+    `;
     document.body.appendChild(modal);
     modal.style.display = 'block';
 
