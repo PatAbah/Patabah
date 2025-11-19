@@ -1,4 +1,3 @@
-
 class NotificationSystem {
     constructor() {
         this.zone = document.getElementById('notificationZone');
