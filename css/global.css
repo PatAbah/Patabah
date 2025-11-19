@@ -609,8 +609,9 @@ ul ul ul {
 .notification-zone {
     background: var(--secondary-color);
     border-bottom: 1px solid var(--border-color);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     display: none;
+    background-color: var(--logo-accent-color);
 }
 .notification-content {
     display: flex;
@@ -622,6 +623,13 @@ ul ul ul {
 .notification-message {
     flex: 1;
     color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+.notification-bell {
+    flex-shrink: 0;
+    animation: shake 0.5s ease-in-out;
 }
 .notification-ok {
     background: var(--primary-color);
@@ -631,7 +639,14 @@ ul ul ul {
     border-radius: var(--border-radius);
     cursor: pointer;
     margin-left: var(--spacing-md);
-} 
+    flex-shrink: 0;
+}
+
+@keyframes shake {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+    20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
 
 @media (max-width: 768px) {
     .payment-header {
