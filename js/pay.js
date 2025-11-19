@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button onclick="location.reload()" class="submit-btn" style="margin:0 8px;">Retry</button>
                 <button onclick="this.closest('.modal').remove()" class="submit-btn" style="background:#999;">Close</button>
             </div></div>`;
-    }, 12000);
+    }, 5000);
 
     fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST', signal:AbortSignal.timeout(10000)})
         .then(r => r.ok ? r.json() : Promise.reject())
