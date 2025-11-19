@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentFees = JSON.parse(data.fees || '{}');
         
                 associationInput.disabled = false;
-                associationInput.placeholder = "Association";
+                associationInput.placeholder = "Click institution first";
         
                 renderFeeOptions(currentFees);
         
