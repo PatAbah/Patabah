@@ -485,11 +485,13 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name) {
+                associationInput.disabled = false;
+                institutionInput.disabled = false;
                 document.getElementById('institution').value = data.institution_name || '';
                 document.getElementById('association').value = data.association_name;
                 currentInstitutionId = data.institution_id;
                 currentFees = JSON.parse(data.fees || '{}');
-                associationInput.disabled = false;
+                
                 renderFeeOptions(currentFees);
                 const first = document.querySelector('input[name="fee_category"]');
                 if (first) {
