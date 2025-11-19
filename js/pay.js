@@ -460,60 +460,48 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.innerHTML = `
         <div class="modal-content verify-modal" style="max-width:400px;">
             <div class="modal-body" style="text-align:center; padding:50px 20px;">
-                <div style="
-                    width:44px;
-                    height:44px;
-                    border:5px solid #f3f3f3;
-                    border-top:5px solid var(--primary-color);
-                    border-radius:50%;
-                    animation:spin 0.9s linear infinite;
-                    margin:0 auto 20px;
-                "></div>
-                <p style="margin:0; font-size:15px; color:#555;">
-                    Automatically fetching details...
-                </p>
+                <div style="width:44px;height:44px;border:5px solid #f3f3f3;border-top:5px solid var(--primary-color);border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto 20px;"></div>
+                <p style="margin:0;font-size:15px;color:#555;">Automatically fetching details...</p>
             </div>
         </div>
-    
-        <style>
-            @keyframes spin {
-                0% { transform:rotate(0deg); }
-                100% { transform:rotate(360deg); }
-            }
-        </style>
-    `;
+        <style>@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>`;
     document.body.appendChild(modal);
     modal.style.display = 'block';
 
-    let timeout = setTimeout(() => showRetry(), 25000);
+    let settled = false;
+    const close = () => { if (!settled) { settled = true; modal.remove(); } };
 
-    fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST'})
+    // 12-second hard timeout (way more than enough)
+    const hardTimeout = setTimeout(() => {
+        modal.innerHTML = `<div class="modal-content verify-modal" style="max-width:400px;">
+            <div class="modal-body" style="text-align:center;padding:40px 20px;">
+                <p style="margin-bottom:20px;">Taking too long.</p>
+                <button onclick="location.reload()" class="submit-btn" style="margin:0 8px;">Retry</button>
+                <button onclick="this.closest('.modal').remove()" class="submit-btn" style="background:#999;">Close</button>
+            </div></div>`;
+    }, 12000);
+
+    fetch(`/pay/${encodeURIComponent(sn)}`, {method:'POST', signal:AbortSignal.timeout(10000)})
+        .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name) {
                 document.getElementById('institution').value = data.institution_name || '';
                 document.getElementById('association').value = data.association_name;
-        
                 currentInstitutionId = data.institution_id;
                 currentFees = JSON.parse(data.fees || '{}');
-        
                 associationInput.disabled = false;
-                associationInput.placeholder = "Click institution first";
-        
                 renderFeeOptions(currentFees);
-        
-                const firstFee = document.querySelector('input[name="fee_category"]');
-                if (firstFee) {
-                    firstFee.checked = true;
-                    const label = document.querySelector(`label[for="${firstFee.id}"] .fee-category`);
-                    showSummaryBox(firstFee.value, label?.textContent || '');
+                const first = document.querySelector('input[name="fee_category"]');
+                if (first) {
+                    first.checked = true;
+                    const label = document.querySelector(`label[for="${first.id}"] .fee-category`);
+                    showSummaryBox(first.value, label?.textContent || '');
                 }
             }
         })
-
-    function showRetry() {
-        modal.querySelector('.modal-body').innerHTML = `
-            <p style="margin-bottom:20px;">Could not fetch details automatically.</p>
-            <button onclick="location.reload()" class="submit-btn" style="margin:0 10px;">Retry</button>
-            <button onclick="${modal.remove()}" class="submit-btn" style="background:#999;">Close</button>`;
-    }
+        .catch(() => {}) // silently ignore any error
+        .finally(() => {
+            clearTimeout(hardTimeout);
+            close();
+        });
 });
