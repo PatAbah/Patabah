@@ -41,10 +41,9 @@ class NotificationSystem {
     async markAsSeen() {
         try {
             await fetch('/ajax/notifications/mark-seen', {method: 'POST'});
-            //this.zone.style.display = 'none';
+            this.zone.style.display = 'none';
         } catch (error) {
-            console.error('Mark seen failed:', error);
-            //this.zone.style.display = 'none';
+            this.zone.style.display = 'none';
         }
     }
 
