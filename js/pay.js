@@ -447,7 +447,7 @@ function payInvoice(data, arn) {
 document.addEventListener('DOMContentLoaded', () => {
     // one
     associationInput.disabled = true;
-    associationInput.placeholder = "Select institution first";
+    associationInput.placeholder = "Click institution first";
     fetchInstitutions();
     
     // Auto-fill from ?sn=shortname
@@ -484,27 +484,46 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name && data.institution_id) {
+                // Set institution data
                 institutionInput.value = data.institution_name || '';
-                associationInput.value = data.association_name;
-
                 currentInstitutionId = data.institution_id;
-                currentFees = JSON.parse(data.fees || '{}');
-
-                // ←←←←←←←←←← CRITICAL: manually re-enable + trigger fee render
+                
+                // Enable association input
                 associationInput.disabled = false;
                 associationInput.placeholder = "Association";
-
-                renderFeeOptions(currentFees);
-
-                const first = document.querySelector('input[name="fee_category"]');
-                if (first) {
-                    first.checked = true;
-                    const label = document.querySelector(`label[for="${first.id}"] .fee-category`);
-                    showSummaryBox(first.value, label?.textContent || '');
-                }
+                
+                // Set association data
+                associationInput.value = data.association_name;
+                currentFees = JSON.parse(data.fees || '{}');
+                
+                // CRITICAL FIXES:
+                // 1. Force the biller tab to be active
+                document.querySelector('[data-tab="biller"]').click();
+                
+                // 2. Add a small delay to ensure DOM updates
+                setTimeout(() => {
+                    // 3. Render fee options
+                    renderFeeOptions(currentFees);
+                    
+                    // 4. Select first fee option if multiple exist
+                    setTimeout(() => {
+                        const firstFeeRadio = document.querySelector('input[name="fee_category"]');
+                        if (firstFeeRadio) {
+                            firstFeeRadio.checked = true;
+                            const label = document.querySelector(`label[for="${firstFeeRadio.id}"] .fee-category`);
+                            showSummaryBox(firstFeeRadio.value, label?.textContent || '');
+                        } else if (currentFees && Object.keys(currentFees).length === 1) {
+                            // Single fee case
+                            const amount = Object.values(currentFees)[0];
+                            showSummaryBox(amount);
+                        }
+                    }, 100);
+                }, 200);
             }
         })
-        .catch(() => {})
+        .catch((error) => {
+            console.error('Auto-fill error:', error);
+        })
         .finally(() => {
             clearTimeout(hardTimeout);
             close();
