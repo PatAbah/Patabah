@@ -447,7 +447,7 @@ function payInvoice(data, arn) {
 document.addEventListener('DOMContentLoaded', () => {
     // one
     associationInput.disabled = true;
-    associationInput.placeholder = "Click institution first";
+    associationInput.placeholder = "Select institution first";
     fetchInstitutions();
     
     // Auto-fill from ?sn=shortname
@@ -484,29 +484,33 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name && data.institution_id) {
-                // FIX 1: Ensure institutionInput is not readonly before setting value
-                institutionInput.readOnly = false; 
-                
-                institutionInput.value = data.institution_name || '';
-                associationInput.value = data.association_name;
-
+                // Set institution values FIRST
                 currentInstitutionId = data.institution_id;
-                currentFees = JSON.parse(data.fees || '{}');
-
-                // ←←←←←←←←←← CRITICAL: manually re-enable + trigger fee render
+                institutionInput.value = data.institution_name || '';
+                
+                // Enable association input with proper placeholder
                 associationInput.disabled = false;
-                associationInput.placeholder = "Association";
-
+                associationInput.placeholder = "Enter association name";
+                
+                // Set association value
+                associationInput.value = data.association_name;
+                
+                // Parse and set fees
+                currentFees = JSON.parse(data.fees || '{}');
+                
+                // Clear any existing suggestions
+                associationSuggestionsContainer.innerHTML = '';
+                associationSuggestionsContainer.style.display = 'none';
+                
+                // Render fee options
                 renderFeeOptions(currentFees);
 
+                // Auto-select first fee option if multiple exist
                 const first = document.querySelector('input[name="fee_category"]');
                 if (first) {
                     first.checked = true;
-                    // FIX 2: Explicitly trigger the click/change event to calculate the fee and show the summary box
-                    first.click();
-                } else if (currentFees && typeof currentFees !== 'object') {
-                    // This handles the case where renderFeeOptions rendered a disabled text input
-                    showSummaryBox(currentFees);
+                    const label = document.querySelector(`label[for="${first.id}"] .fee-category`);
+                    showSummaryBox(first.value, label?.textContent || '');
                 }
             }
         })
