@@ -484,46 +484,33 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name && data.institution_id) {
-                // Set institution data
-                institutionInput.value = data.institution_name || '';
-                currentInstitutionId = data.institution_id;
+                // FIX 1: Ensure institutionInput is not readonly before setting value
+                institutionInput.readOnly = false; 
                 
-                // Enable association input
+                institutionInput.value = data.institution_name || '';
+                associationInput.value = data.association_name;
+
+                currentInstitutionId = data.institution_id;
+                currentFees = JSON.parse(data.fees || '{}');
+
+                // ←←←←←←←←←← CRITICAL: manually re-enable + trigger fee render
                 associationInput.disabled = false;
                 associationInput.placeholder = "Association";
-                
-                // Set association data
-                associationInput.value = data.association_name;
-                currentFees = JSON.parse(data.fees || '{}');
-                
-                // CRITICAL FIXES:
-                // 1. Force the biller tab to be active
-                document.querySelector('[data-tab="biller"]').click();
-                
-                // 2. Add a small delay to ensure DOM updates
-                setTimeout(() => {
-                    // 3. Render fee options
-                    renderFeeOptions(currentFees);
-                    
-                    // 4. Select first fee option if multiple exist
-                    setTimeout(() => {
-                        const firstFeeRadio = document.querySelector('input[name="fee_category"]');
-                        if (firstFeeRadio) {
-                            firstFeeRadio.checked = true;
-                            const label = document.querySelector(`label[for="${firstFeeRadio.id}"] .fee-category`);
-                            showSummaryBox(firstFeeRadio.value, label?.textContent || '');
-                        } else if (currentFees && Object.keys(currentFees).length === 1) {
-                            // Single fee case
-                            const amount = Object.values(currentFees)[0];
-                            showSummaryBox(amount);
-                        }
-                    }, 100);
-                }, 200);
+
+                renderFeeOptions(currentFees);
+
+                const first = document.querySelector('input[name="fee_category"]');
+                if (first) {
+                    first.checked = true;
+                    // FIX 2: Explicitly trigger the click/change event to calculate the fee and show the summary box
+                    first.click();
+                } else if (currentFees && typeof currentFees !== 'object') {
+                    // This handles the case where renderFeeOptions rendered a disabled text input
+                    showSummaryBox(currentFees);
+                }
             }
         })
-        .catch((error) => {
-            console.error('Auto-fill error:', error);
-        })
+        .catch(() => {})
         .finally(() => {
             clearTimeout(hardTimeout);
             close();
