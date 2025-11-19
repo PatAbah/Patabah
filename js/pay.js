@@ -484,37 +484,37 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
             if (data.association_name && data.institution_id) {
-                // Set institution values FIRST
-                currentInstitutionId = data.institution_id;
+                // Ensure institutionInput is not readonly before setting value
+                institutionInput.readOnly = false; 
+
                 institutionInput.value = data.institution_name || '';
-                
-                // Enable association input with proper placeholder
-                associationInput.disabled = false;
-                associationInput.placeholder = "Enter association name";
-                
-                // Set association value
                 associationInput.value = data.association_name;
-                
-                // Parse and set fees
+
+                currentInstitutionId = data.institution_id;
                 currentFees = JSON.parse(data.fees || '{}');
-                
-                // Clear any existing suggestions
-                associationSuggestionsContainer.innerHTML = '';
-                associationSuggestionsContainer.style.display = 'none';
-                
-                // Render fee options
+
+                // Manually re-enable and trigger fee render
+                associationInput.disabled = false;
+                associationInput.placeholder = "Association";
+
                 renderFeeOptions(currentFees);
 
-                // Auto-select first fee option if multiple exist
-                const first = document.querySelector('input[name="fee_category"]');
-                if (first) {
-                    first.checked = true;
-                    const label = document.querySelector(`label[for="${first.id}"] .fee-category`);
-                    showSummaryBox(first.value, label?.textContent || '');
+                const firstFeeRadio = document.querySelector('input[name="fee_category"]');
+                if (firstFeeRadio) {
+                    firstFeeRadio.checked = true;
+
+                    // Trigger the associated change event after selecting the fee
+                    firstFeeRadio.dispatchEvent(new Event('change'));
+
+                    // Automatically show the summary box after selecting the first fee
+                    const label = document.querySelector(`label[for="${firstFeeRadio.id}"] .fee-category`);
+                    if (label) showSummaryBox(firstFeeRadio.value, label.textContent);
                 }
             }
         })
-        .catch(() => {})
+        .catch(() => {
+            alert("Unable to auto-fill details. Please try again.");
+        })
         .finally(() => {
             clearTimeout(hardTimeout);
             close();
