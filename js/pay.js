@@ -364,7 +364,7 @@ function displayInvoiceDetails(data, arn) {
         invoiceForm.appendChild(detailsContainer);
     }
     
-    const categoryRow = data.category ? `<div class="detail-row"><span class="detail-label">Category:</span><span class="detail-value">${data.category}</span></div>` : '';
+    const categoryRow = data.category ? `<div class="detail-row"><span class="detail-label">Category: </span><span class="detail-value">${data.category}</span></div>` : '';
     
     detailsContainer.innerHTML = `
         <div class="payment-details">
