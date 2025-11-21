@@ -1,25 +1,47 @@
-/* Verify Button */
 .verify-btn {
-    background: #f4d17c;
+    background: linear-gradient(135deg, #f4d17c 0%, #e6c260 100%);
     color: var(--primary-dark);
     border: none;
-    font-weight: bold;
-    padding: 4px 7px;
-    padding-right: 12px;
-    border-radius: 0;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 6px;
     border: 1px solid var(--primary-dark);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0px;
+    gap: 6px;
     font-size: var(--font-size-sm);
-    transition: background-color var(--transition-fast);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 0 var(--primary-dark);
+    position: relative;
+    overflow: hidden;
 }
 
 .verify-btn:hover {
-    background: rgba(175, 76, 2, 1);
+    background: linear-gradient(135deg, #e6c260 0%, #d8b244 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 0.5px 0 var(--primary-dark);
 }
 
+.verify-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--primary-dark);
+}
+
+.verify-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.2s;
+}
+
+.verify-btn:hover::before {
+    left: 100%;
+}
 /* Verify Modal */
 .verify-modal {
     max-width: 500px;
