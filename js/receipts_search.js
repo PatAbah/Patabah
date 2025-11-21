@@ -60,7 +60,7 @@ function displayReceipts(receipts) {
         <div class="receipt-item">
             <div class="receipt-name">${receipt.fullname}</div>
             <div class="receipt-details">
-                <span class="receipt-arn">${receipt.arn.replace(/ /g, '').toUpperCase()}</span> 
+                <span class="receipt-arn">${receipt.ARN.replace(/ /g, '').toUpperCase()}</span> 
                 • ${receipt.association_name} 
                 • ₦${parseFloat(receipt.amount).toFixed(2)}
                 • ${new Date(receipt.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
