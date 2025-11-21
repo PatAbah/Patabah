@@ -12,7 +12,7 @@ async function searchReceipts() {
     const phone = document.getElementById('phone').value;
     
     if (!matnumber && !fullname && !email && !phone) {
-        alert('Please fill at least one field');
+        alert('Please fill all fields');
         return;
     }
     
