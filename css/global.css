@@ -738,3 +738,32 @@ ul ul ul {
         justify-content: flex-end;
     }
 }
+
+.mobile-center {
+    margin-left: initial;
+    margin-right: initial;
+    text-align: left;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+    .mobile-center {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        display: block;
+        border-bottom: 0;
+    }
+    
+    .mobile-center.flex {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .mobile-center.inline {
+        display: block;
+        text-align: center;
+    }
+} 
