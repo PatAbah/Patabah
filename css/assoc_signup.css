@@ -119,6 +119,57 @@
     background: #fffbf0;
 }
 
+.custom-field-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    align-items: center;
+}
+
+.custom-field-row .form-input {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.remove-custom-field-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    border-radius: var(--small-border-radius);
+    font-size: var(--font-size-xxl);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-normal);
+}
+
+.remove-custom-field-btn:hover {
+    background: #b71c1c;
+}
+
+.add-custom-field-btn {
+    background: transparent;
+    color: var(--accent-color);
+    border: 2px dashed var(--accent-color);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--small-border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-normal);
+    width: 100%;
+    margin-top: var(--spacing-sm);
+}
+
+.add-custom-field-btn:hover {
+    background: #fffbf0;
+}
+
+#default-fields input {
+    cursor: not-allowed;
+}
 .button-group {
     display: flex;
     gap: var(--spacing-md);
