@@ -10,7 +10,8 @@ let formData = {
     fees: {},
     contact_title: '',
     president_name: '',
-    president_phone: ''
+    president_phone: '', 
+    custom_fields: []
 };
 
 const contactTitleOptions = {
