@@ -478,4 +478,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateContactTitleOptions();
     updateInstitutionRequirement();
+    
+    updateDefaultFields();
+    
+    document.querySelector('.add-custom-field-btn').addEventListener('click', addCustomField);
+    
+    document.querySelector('#step-6 .back-btn').addEventListener('click', function() {
+        previousStep(5);
+    });
+
+    document.querySelector('#step-5 .submit-btn').addEventListener('click', function() {
+        nextStep(6);
+    });
 });
