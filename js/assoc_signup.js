@@ -1,4 +1,5 @@
 let formData = {
+    organization_type: 'student',
     institution: '',
     institution_id: null,
     association_name: '',
@@ -7,13 +8,64 @@ let formData = {
     account_number: '',
     account_name: '',
     fees: {},
+    contact_title: '',
     president_name: '',
     president_phone: ''
 };
 
+const contactTitleOptions = {
+    student: ['President', 'Vice President', 'Secretary', 'Treasurer'],
+    non_student: ['President', 'Manager', 'Director', 'Coordinator', 'Chairman'],
+    institution: ['Administrator', 'Principal', 'Headmaster', 'Proprietor', 'Coordinator', 'Bursar']
+};
+
+const organizationTypeLabels = {
+    student: 'Student Association',
+    non_student: 'Non-Student Group',
+    institution: 'School/Institution'
+};
+
+function updateContactTitleOptions() {
+    const select = document.getElementById('contact-title');
+    const options = contactTitleOptions[formData.organization_type] || contactTitleOptions.student;
+    
+    select.innerHTML = '<option value="">Select your role</option>';
+    options.forEach(title => {
+        const option = document.createElement('option');
+        option.value = title;
+        option.textContent = title;
+        select.appendChild(option);
+    });
+}
+
+function updateInstitutionRequirement() {
+    const institutionSection = document.getElementById('step-2');
+    const institutionInput = document.getElementById('institution');
+    const requiresInstitution = formData.organization_type === 'student';
+    
+    if (requiresInstitution) {
+        institutionSection.style.display = 'block';
+        institutionInput.required = true;
+    } else {
+        institutionSection.style.display = 'none';
+        institutionInput.required = false;
+        formData.institution = '';
+        formData.institution_id = null;
+    }
+    
+    document.querySelectorAll('.progress-step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        if (stepNum === 2 && !requiresInstitution) {
+            step.style.display = 'none';
+        } else {
+            step.style.display = 'flex';
+        }
+    });
+}
+
 function nextStep(stepNumber) {
     const currentStep = document.querySelector('.step-content.active');
-    const inputs = currentStep.querySelectorAll('input[required]');
+    const inputs = currentStep.querySelectorAll('input[required], select[required]');
     let isValid = true;
 
     inputs.forEach(input => {
@@ -33,12 +85,24 @@ function nextStep(stepNumber) {
     const currentStepNum = parseInt(currentStep.id.split('-')[1]);
     
     if (currentStepNum === 1) {
+        const selectedType = document.querySelector('input[name="organization_type"]:checked');
+        formData.organization_type = selectedType ? selectedType.value : 'student';
+        updateInstitutionRequirement();
+        updateContactTitleOptions();
+        
+        if (formData.organization_type === 'student') {
+            showStep(2);
+        } else {
+            showStep(3);
+        }
+        return;
+    } else if (currentStepNum === 2) {
         formData.institution = document.getElementById('institution').value.trim();
         if (!formData.institution_id) {
             alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!");
             return;
         }
-    } else if (currentStepNum === 2) {
+    } else if (currentStepNum === 3) {
         formData.association_name = document.getElementById('association-name').value.trim();
         formData.association_email = document.getElementById('association-email').value.trim();
         formData.bank_name = document.getElementById('bank-name').value.trim();
@@ -59,9 +123,15 @@ function nextStep(stepNumber) {
             alert('Please add at least one fee category');
             return;
         }
-    } else if (currentStepNum === 3) {
+    } else if (currentStepNum === 4) {
+        formData.contact_title = document.getElementById('contact-title').value.trim();
         formData.president_name = document.getElementById('president-name').value.trim();
         formData.president_phone = document.getElementById('president-phone').value.trim();
+        
+        if (!formData.contact_title) {
+            alert('Please select your role/title');
+            return;
+        }
         
         populateReview();
     }
@@ -70,7 +140,11 @@ function nextStep(stepNumber) {
 }
 
 function previousStep(stepNumber) {
-    showStep(stepNumber);
+    if (stepNumber === 1 && formData.organization_type !== 'student') {
+        showStep(1);
+    } else {
+        showStep(stepNumber);
+    }
 }
 
 function showStep(stepNumber) {
@@ -126,12 +200,22 @@ function updateRemoveButtons() {
 }
 
 function populateReview() {
-    document.getElementById('review-institution').textContent = formData.institution;
+    document.getElementById('review-organization-type').textContent = organizationTypeLabels[formData.organization_type] || 'Student Association';
+    
+    const institutionSection = document.getElementById('review-institution-section');
+    if (formData.organization_type === 'student' && formData.institution) {
+        institutionSection.style.display = 'block';
+        document.getElementById('review-institution').textContent = formData.institution;
+    } else {
+        institutionSection.style.display = 'none';
+    }
+    
     document.getElementById('review-association').textContent = formData.association_name;
     document.getElementById('review-association-email').textContent = formData.association_email;
     document.getElementById('review-bank-name').textContent = formData.bank_name;
     document.getElementById('review-account-number').textContent = formData.account_number;
     document.getElementById('review-account-name').textContent = formData.account_name;
+    document.getElementById('review-contact-title').textContent = formData.contact_title;
     document.getElementById('review-president').textContent = formData.president_name;
     document.getElementById('review-phone').textContent = formData.president_phone;
 
@@ -153,7 +237,6 @@ async function submitForm() {
     submitBtn.textContent = 'Submitting...';
 
     try {
-        console.log(formData);
         const response = await fetch('/ajax/association/register', {
             method: 'POST',
             headers: {
@@ -223,6 +306,21 @@ function displayInstitutionSuggestions(institutions) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name="organization_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.organization-type-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            this.closest('.organization-type-option').classList.add('selected');
+        });
+    });
+
+    document.querySelectorAll('.organization-type-option').forEach(option => {
+        if (option.querySelector('input').checked) {
+            option.classList.add('selected');
+        }
+    });
+
     document.querySelector('#step-1 .submit-btn').addEventListener('click', function() {
         nextStep(2);
     });
@@ -245,6 +343,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelector('#step-4 .back-btn').addEventListener('click', function() {
         previousStep(3);
+    });
+
+    document.querySelector('#step-4 .submit-btn').addEventListener('click', function() {
+        nextStep(5);
+    });
+
+    document.querySelector('#step-5 .back-btn').addEventListener('click', function() {
+        previousStep(4);
     });
 
     document.querySelector('#final-submit').addEventListener('click', submitForm);
@@ -281,4 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestionsContainer.style.display = 'none';
         }
     });
+
+    updateContactTitleOptions();
+    updateInstitutionRequirement();
 });
