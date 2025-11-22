@@ -89,11 +89,82 @@ function updateInstitutionRequirement() {
 
 function nextStep(stepNumber) {
     const currentStep = document.querySelector('.step-content.active');
+    const inputs = currentStep.querySelectorAll('input[required], select[required]');
+    let isValid = true;
+
+    inputs.forEach(input => {
+        if (!input.value.trim()) {
+            isValid = false;
+            input.style.borderColor = 'var(--error-color)';
+        } else {
+            input.style.borderColor = 'var(--border-color)';
+        }
+    });
+
+    if (!isValid) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
     const currentStepNum = parseInt(currentStep.id.split('-')[1]);
     
-    // ... your existing cases ...
-    
-    else if (currentStepNum === 4) {
+    if (currentStepNum === 1) {
+        const selectedType = document.querySelector('input[name="organization_type"]:checked');
+        formData.organization_type = selectedType ? selectedType.value : 'student';
+        updateInstitutionRequirement();
+        updateContactTitleOptions();
+        
+        if (formData.organization_type === 'student') {
+            showStep(2);
+        } else {
+            showStep(3);
+        }
+        return;
+    } else if (currentStepNum === 2) {
+        formData.institution = document.getElementById('institution').value.trim();
+        if (!formData.institution_id) {
+            alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!");
+            return;
+        }
+        showStep(3);
+        return;
+    } else if (currentStepNum === 3) {
+        formData.association_name = document.getElementById('association-name').value.trim();
+        formData.association_email = document.getElementById('association-email').value.trim();
+        formData.bank_name = document.getElementById('bank-name').value.trim();
+        formData.account_number = document.getElementById('account-number').value.trim();
+        
+        const feeRows = document.querySelectorAll('.fee-row');
+        formData.fees = {};
+        
+        feeRows.forEach(row => {
+            const category = row.querySelector('.fee-category').value.trim();
+            const amount = row.querySelector('.fee-amount').value.trim();
+            if (category && amount) {
+                formData.fees[category] = amount;
+            }
+        });
+
+        if (Object.keys(formData.fees).length === 0) {
+            alert('Please add at least one fee category');
+            return;
+        }
+        showStep(4);
+        return;
+    } else if (currentStepNum === 4) {
+        formData.contact_title = document.getElementById('contact-title').value.trim();
+        formData.president_name = document.getElementById('president-name').value.trim();
+        formData.president_phone = document.getElementById('president-phone').value.trim();
+        
+        if (!formData.contact_title) {
+            alert('Please select your role/title');
+            return;
+        }
+        
+        populateReview();
+        showStep(5);
+        return;
+    } else if (currentStepNum === 4) {
         formData.contact_title = document.getElementById('contact-title').value.trim();
         formData.president_name = document.getElementById('president-name').value.trim();
         formData.president_phone = document.getElementById('president-phone').value.trim();
@@ -187,6 +258,18 @@ function populateReview() {
         feeItem.style.margin = '5px 0';
         feeItem.innerHTML = `<strong>${category}:</strong> ₦${parseFloat(amount).toLocaleString()}`;
         feesContainer.appendChild(feeItem);
+    }
+    const customFieldsContainer = document.getElementById('review-custom-fields');
+    customFieldsContainer.innerHTML = '';
+    if (formData.custom_fields.length > 0) {
+        formData.custom_fields.forEach(field => {
+            const fieldItem = document.createElement('p');
+            fieldItem.style.margin = '5px 0';
+            fieldItem.innerHTML = `<strong>${field.name}</strong>`;
+            customFieldsContainer.appendChild(fieldItem);
+        });
+    } else {
+        customFieldsContainer.innerHTML = '<p style="color: var(--text-light);">No additional fields</p>';
     }
 }
 
