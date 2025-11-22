@@ -150,9 +150,12 @@ function previousStep(stepNumber) {
 function showStep(stepNumber) {
     document.querySelectorAll('.step-content').forEach(step => {
         step.classList.remove('active');
+        step.style.display = 'none'; // Add this line
     });
 
-    document.getElementById(`step-${stepNumber}`).classList.add('active');
+    const targetStep = document.getElementById(`step-${stepNumber}`);
+    targetStep.classList.add('active');
+    targetStep.style.display = 'block'; // Add this line
 
     document.querySelectorAll('.progress-step').forEach(step => {
         const stepNum = parseInt(step.dataset.step);
