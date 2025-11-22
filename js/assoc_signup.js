@@ -25,6 +25,38 @@ const organizationTypeLabels = {
     institution: 'School/Institution'
 };
 
+function updateProgressBar(currentStep) {
+    const progressFill = document.getElementById('progress-fill');
+    const progressLabels = document.querySelectorAll('.progress-label');
+    const totalSteps = 4;
+    const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    
+    progressFill.style.width = `${progress}%`;
+    
+    progressLabels.forEach((label, index) => {
+        if (index < currentStep) {
+            label.classList.add('active');
+        } else {
+            label.classList.remove('active');
+        }
+    });
+}
+
+function showStep(stepNumber) {
+    document.querySelectorAll('.step-content').forEach(step => {
+        step.classList.remove('active');
+        step.style.display = 'none';
+    });
+
+    const targetStep = document.getElementById(`step-${stepNumber}`);
+    if (targetStep) {
+        targetStep.classList.add('active');
+        targetStep.style.display = 'block';
+    }
+
+    updateProgressBar(stepNumber);
+}
+
 function updateContactTitleOptions() {
     const select = document.getElementById('contact-title');
     const options = contactTitleOptions[formData.organization_type] || contactTitleOptions.student;
@@ -52,15 +84,6 @@ function updateInstitutionRequirement() {
         formData.institution = '';
         formData.institution_id = null;
     }
-    
-    document.querySelectorAll('.progress-step').forEach(step => {
-        const stepNum = parseInt(step.dataset.step);
-        if (stepNum === 2 && !requiresInstitution) {
-            step.style.display = 'none';
-        } else {
-            step.style.display = 'flex';
-        }
-    });
 }
 
 function nextStep(stepNumber) {
@@ -102,6 +125,8 @@ function nextStep(stepNumber) {
             alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!");
             return;
         }
+        showStep(3);
+        return;
     } else if (currentStepNum === 3) {
         formData.association_name = document.getElementById('association-name').value.trim();
         formData.association_email = document.getElementById('association-email').value.trim();
@@ -123,6 +148,8 @@ function nextStep(stepNumber) {
             alert('Please add at least one fee category');
             return;
         }
+        showStep(4);
+        return;
     } else if (currentStepNum === 4) {
         formData.contact_title = document.getElementById('contact-title').value.trim();
         formData.president_name = document.getElementById('president-name').value.trim();
@@ -134,36 +161,21 @@ function nextStep(stepNumber) {
         }
         
         populateReview();
+        showStep(5);
+        return;
     }
 
     showStep(stepNumber);
 }
 
 function previousStep(stepNumber) {
-    if (stepNumber === 1 && formData.organization_type !== 'student') {
+    if (stepNumber === 1) {
+        showStep(1);
+    } else if (stepNumber === 2 && formData.organization_type !== 'student') {
         showStep(1);
     } else {
         showStep(stepNumber);
     }
-}
-function showStep(stepNumber) {
-    document.querySelectorAll('.step-content').forEach(step => {
-        step.classList.remove('active');
-        step.style.display = 'none'; // Add this line
-    });
-
-    const targetStep = document.getElementById(`step-${stepNumber}`);
-    targetStep.classList.add('active');
-    targetStep.style.display = 'block'; // Add this line
-
-    document.querySelectorAll('.progress-step').forEach(step => {
-        const stepNum = parseInt(step.dataset.step);
-        if (stepNum <= stepNumber) {
-            step.classList.add('active');
-        } else {
-            step.classList.remove('active');
-        }
-    });
 }
 
 function addFeeRow() {
@@ -308,6 +320,8 @@ function displayInstitutionSuggestions(institutions) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    showStep(1);
+    
     document.querySelectorAll('input[name="organization_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.organization-type-option').forEach(option => {
