@@ -146,7 +146,6 @@ function previousStep(stepNumber) {
         showStep(stepNumber);
     }
 }
-
 function showStep(stepNumber) {
     document.querySelectorAll('.step-content').forEach(step => {
         step.classList.remove('active');
