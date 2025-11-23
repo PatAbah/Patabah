@@ -208,6 +208,7 @@ function nextStep(stepNumber) {
 function previousStep(stepNumber) {
     if (stepNumber === 1) {
         showStep(1);
+        updateProgressBar(1);
     } else if (stepNumber === 2 && formData.organization_type !== 'student') {
         showStep(1);
     } else {
