@@ -169,6 +169,7 @@ function nextStep(stepNumber) {
         formData.association_email = document.getElementById('association-email').value.trim();
         formData.bank_name = document.getElementById('bank-name').value.trim();
         formData.account_number = document.getElementById('account-number').value.trim();
+        formData.account_name = document.getElementById('account-name').value.trim(); // MISSING THIS LINE
         
         const feeRows = document.querySelectorAll('.fee-row');
         formData.fees = {};
@@ -180,7 +181,7 @@ function nextStep(stepNumber) {
                 formData.fees[category] = amount;
             }
         });
-
+    
         if (Object.keys(formData.fees).length === 0) {
             alert('Please add at least one fee category');
             return;
