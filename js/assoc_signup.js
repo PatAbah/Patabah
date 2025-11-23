@@ -10,7 +10,7 @@ let formData = {
     fees: {},
     contact_title: '',
     president_name: '',
-    president_phone: '', 
+    president_phone: '',
     custom_fields: []
 };
 
@@ -28,19 +28,8 @@ const organizationTypeLabels = {
 
 function updateProgressBar(currentStep) {
     const progressFill = document.getElementById('progress-fill');
-    const progressLabels = document.querySelectorAll('.progress-label');
-    const totalSteps = 4;
-    const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
-    
+    const progress = ((currentStep - 1) / 5) * 100;
     progressFill.style.width = `${progress}%`;
-    
-    progressLabels.forEach((label, index) => {
-        if (index < currentStep) {
-            label.classList.add('active');
-        } else {
-            label.classList.remove('active');
-        }
-    });
 }
 
 function showStep(stepNumber) {
@@ -87,6 +76,49 @@ function updateInstitutionRequirement() {
     }
 }
 
+function updateDefaultFields() {
+    const defaultFields = document.getElementById('default-fields');
+    const isStudent = formData.organization_type === 'student';
+    
+    defaultFields.innerHTML = `
+        <input type="text" class="form-input" placeholder="Full name" disabled style="background-color: var(--secondary-color);">
+        <input type="tel" class="form-input" placeholder="Phone number" disabled style="background-color: var(--secondary-color);">
+        <input type="email" class="form-input" placeholder="Email address" disabled style="background-color: var(--secondary-color);">
+        ${isStudent ? '<input type="text" class="form-input" placeholder="Matriculation number" disabled style="background-color: var(--secondary-color);">' : ''}
+    `;
+}
+
+function addCustomField() {
+    const container = document.getElementById('custom-fields-container');
+    const fieldId = 'custom_field_' + Date.now();
+    const newRow = document.createElement('div');
+    newRow.className = 'custom-field-row';
+    newRow.innerHTML = `
+        <input type="text" class="form-input custom-field-name" placeholder="Field name (e.g., Staff ID, Department)" data-id="${fieldId}">
+        <button type="button" class="remove-custom-field-btn">×</button>
+    `;
+    container.appendChild(newRow);
+    
+    newRow.querySelector('.remove-custom-field-btn').addEventListener('click', function() {
+        newRow.remove();
+    });
+}
+
+function collectCustomFields() {
+    const customFields = [];
+    document.querySelectorAll('.custom-field-row').forEach(row => {
+        const input = row.querySelector('.custom-field-name');
+        const fieldName = input.value.trim();
+        if (fieldName) {
+            customFields.push({
+                id: input.getAttribute('data-id'),
+                name: fieldName
+            });
+        }
+    });
+    return customFields;
+}
+
 function nextStep(stepNumber) {
     const currentStep = document.querySelector('.step-content.active');
     const inputs = currentStep.querySelectorAll('input[required], select[required]');
@@ -113,6 +145,7 @@ function nextStep(stepNumber) {
         formData.organization_type = selectedType ? selectedType.value : 'student';
         updateInstitutionRequirement();
         updateContactTitleOptions();
+        updateDefaultFields();
         
         if (formData.organization_type === 'student') {
             showStep(2);
@@ -160,23 +193,9 @@ function nextStep(stepNumber) {
             alert('Please select your role/title');
             return;
         }
-        
-        populateReview();
         showStep(5);
         return;
-    } else if (currentStepNum === 4) {
-        formData.contact_title = document.getElementById('contact-title').value.trim();
-        formData.president_name = document.getElementById('president-name').value.trim();
-        formData.president_phone = document.getElementById('president-phone').value.trim();
-        
-        if (!formData.contact_title) {
-            alert('Please select your role/title');
-            return;
-        }
-        showStep(5);
-        return;
-    }
-    else if (currentStepNum === 5) {
+    } else if (currentStepNum === 5) {
         formData.custom_fields = collectCustomFields();
         populateReview();
         showStep(6);
@@ -259,6 +278,7 @@ function populateReview() {
         feeItem.innerHTML = `<strong>${category}:</strong> ₦${parseFloat(amount).toLocaleString()}`;
         feesContainer.appendChild(feeItem);
     }
+
     const customFieldsContainer = document.getElementById('review-custom-fields');
     customFieldsContainer.innerHTML = '';
     if (formData.custom_fields.length > 0) {
@@ -273,48 +293,6 @@ function populateReview() {
     }
 }
 
-function updateDefaultFields() {
-    const defaultFields = document.getElementById('default-fields');
-    const isStudent = formData.organization_type === 'student';
-    
-    defaultFields.innerHTML = `
-        <input type="text" class="form-input" placeholder="Full name" disabled style="background-color: var(--secondary-color);">
-        <input type="tel" class="form-input" placeholder="Phone number" disabled style="background-color: var(--secondary-color);">
-        <input type="email" class="form-input" placeholder="Email address" disabled style="background-color: var(--secondary-color);">
-        ${isStudent ? '<input type="text" class="form-input" placeholder="Matriculation number" disabled style="background-color: var(--secondary-color);">' : ''}
-    `;
-}
-
-function addCustomField() {
-    const container = document.getElementById('custom-fields-container');
-    const fieldId = 'custom_field_' + Date.now();
-    const newRow = document.createElement('div');
-    newRow.className = 'custom-field-row';
-    newRow.innerHTML = `
-        <input type="text" class="form-input custom-field-name" placeholder="Field name (e.g., Staff ID, Department)" data-id="${fieldId}">
-        <button type="button" class="remove-custom-field-btn">×</button>
-    `;
-    container.appendChild(newRow);
-    
-    newRow.querySelector('.remove-custom-field-btn').addEventListener('click', function() {
-        newRow.remove();
-    });
-}
-
-function collectCustomFields() {
-    const customFields = [];
-    document.querySelectorAll('.custom-field-row').forEach(row => {
-        const input = row.querySelector('.custom-field-name');
-        const fieldName = input.value.trim();
-        if (fieldName) {
-            customFields.push({
-                id: input.getAttribute('data-id'),
-                name: fieldName
-            });
-        }
-    });
-    return customFields;
-}
 async function submitForm() {
     const submitBtn = document.getElementById('final-submit');
     const messageContainer = document.getElementById('submission-message');
@@ -393,6 +371,7 @@ function displayInstitutionSuggestions(institutions) {
 
 document.addEventListener('DOMContentLoaded', function() {
     showStep(1);
+    updateDefaultFields();
     
     document.querySelectorAll('input[name="organization_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -441,6 +420,14 @@ document.addEventListener('DOMContentLoaded', function() {
         previousStep(4);
     });
 
+    document.querySelector('#step-5 .submit-btn').addEventListener('click', function() {
+        nextStep(6);
+    });
+
+    document.querySelector('#step-6 .back-btn').addEventListener('click', function() {
+        previousStep(5);
+    });
+
     document.querySelector('#final-submit').addEventListener('click', submitForm);
 
     document.querySelector('.add-fee-btn').addEventListener('click', addFeeRow);
@@ -448,6 +435,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.remove-fee-btn').addEventListener('click', function() {
         removeFee(this);
     });
+
+    document.querySelector('.add-custom-field-btn').addEventListener('click', addCustomField);
 
     const institutionInput = document.getElementById('institution');
     const suggestionsContainer = document.getElementById('institution-suggestions');
@@ -478,16 +467,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateContactTitleOptions();
     updateInstitutionRequirement();
-    
-    updateDefaultFields();
-    
-    document.querySelector('.add-custom-field-btn').addEventListener('click', addCustomField);
-    
-    document.querySelector('#step-6 .back-btn').addEventListener('click', function() {
-        previousStep(5);
-    });
-
-    document.querySelector('#step-5 .submit-btn').addEventListener('click', function() {
-        nextStep(6);
-    });
 });
