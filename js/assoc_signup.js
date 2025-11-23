@@ -302,7 +302,7 @@ async function submitForm() {
     
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
-
+    console.log('Submitting formData:', formData);
     try {
         const response = await fetch('/ajax/association/register', {
             method: 'POST',
