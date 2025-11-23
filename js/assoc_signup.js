@@ -43,7 +43,10 @@ function showStep(stepNumber) {
         targetStep.classList.add('active');
         targetStep.style.display = 'block';
     }
-
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
     updateProgressBar(stepNumber);
 }
 
