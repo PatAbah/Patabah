@@ -28,7 +28,7 @@ const organizationTypeLabels = {
 
 function updateProgressBar(currentStep) {
     const progressFill = document.getElementById('progress-fill');
-    const progress = ((currentStep - 1) / 5) * 100;
+    const progress = ((currentStep) / 6) * 100;
     progressFill.style.width = `${progress}%`;
 }
 
