@@ -223,7 +223,7 @@ function addFeeRow() {
     const newRow = document.createElement('div');
     newRow.className = 'fee-row';
     newRow.innerHTML = `
-        <input type="text" class="form-input fee-category" placeholder="Category (e.g., Returning Students)" required>
+        <input type="text" class="form-input fee-category" placeholder="Category (e.g., Returning Members/Students)" required>
         <input type="number" class="form-input fee-amount" placeholder="Amount" required>
         <button type="button" class="remove-fee-btn">×</button>
     `;
