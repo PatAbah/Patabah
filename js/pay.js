@@ -1,160 +1,196 @@
-const tabBtns = document.querySelectorAll('.tab-btn');
-const tabPanes = document.querySelectorAll('.tab-pane');
-const billerForm = document.getElementById('biller-form');
-const invoiceForm = document.getElementById('invoice-form');
-const institutionInput = document.getElementById('institution');
-const associationInput = document.getElementById('association');
-const suggestionsContainer = document.getElementById('institution-suggestions');
-const associationSuggestionsContainer = document.getElementById('association-suggestions');
-const amountContainer = document.getElementById('amount-container');
-const submitBtn = document.querySelector('#biller-form .submit-btn');
-
-let currentInstitutionId = null;
+let currentOrganizationType = null;
+let currentAssociationId = null;
 let currentFees = null;
-let SERVICE_CHARGE = 0;
+let currentCustomFields = [];
 let selectedAmount = 0;
 let endpoint = '/init-payment';
 let institutionsCache = null;
+let associationsCache = null;
 
-async function getTotalAmount(inputAmount) {
-    const formFeeData = new FormData();
-    formFeeData.append('amount', inputAmount);
-    try {
-        const response = await fetch('/api/service-fee', { method: 'POST', body: formFeeData });
-        const data = await response.json();
-        console.log(data);
-        return data.fee;
-    } catch(error) {
-        const summaryBoxes = document.querySelectorAll('.summary-box');
-        const lastSummaryBox = summaryBoxes[summaryBoxes.length - 1];
-        lastSummaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Error fetching service charge. Your internet connection is probably broken.</span><span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span></div></div>`;
-        document.querySelector('.submit-btn').style.display = 'none';
-        document.getElementById('tos').style.display = 'none';
-        document.getElementById('generateInvoice').style.display = 'none';
-        return 0; 
+const organizationTypeConfig = {
+    student: {
+        searchField: 'institution',
+        searchEndpoint: '/api/search-institutions',
+        associationEndpoint: '/api/search-student-associations',
+        dynamicFields: ['institution', 'association']
+    },
+    non_student: {
+        searchField: 'association',
+        searchEndpoint: '/api/search-non-student-associations',
+        associationEndpoint: null,
+        dynamicFields: ['association']
+    },
+    institution: {
+        searchField: 'institution',
+        searchEndpoint: '/api/search-institution-organizations',
+        associationEndpoint: null,
+        dynamicFields: ['institution']
     }
-}
+};
 
-function updatePaymentButton(totalAmount = null) {
-    submitBtn.innerHTML = totalAmount !== null ? `Pay <strong>₦${parseFloat(totalAmount).toLocaleString()}</strong>` : 'Proceed to Payment';
-}
-
-async function showSummaryBox(associationAmount, category = '') {
-    const totalAmount = await getTotalAmount(parseFloat(associationAmount));
-    selectedAmount = totalAmount;
+function selectOrganizationType() {
+    const selected = document.querySelector('input[name="pay_organization_type"]:checked');
+    if (!selected) return;
     
-    let summaryBox = document.getElementById('summary-box');
-    if (!summaryBox) {
-        summaryBox = document.createElement('div');
-        summaryBox.id = 'summary-box';
-        summaryBox.className = 'summary-box';
-        submitBtn.parentNode.insertBefore(summaryBox, document.getElementById('tos'));
-    }
+    currentOrganizationType = selected.value;
+    document.getElementById('organizationTypeModal').style.display = 'none';
+    document.getElementById('paymentLoading').style.display = 'flex';
     
-    const categoryText = category ? ` (${category})` : '';
-    summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Includes service charge</div></div>`;
-    updatePaymentButton(totalAmount);
+    initializePaymentForm();
 }
 
-function clearSummaryBox() {
-    const summaryBox = document.getElementById('summary-box');
-    if (summaryBox) summaryBox.remove();
-    updatePaymentButton();
-}
-
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        tabBtns.forEach(tab => tab.classList.remove('active'));
-        tabPanes.forEach(pane => pane.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`${btn.getAttribute('data-tab')}-tab`).classList.add('active');
-    });
-});
-
-async function fetchInstitutions() {
-    if (institutionsCache) return institutionsCache;
+async function initializePaymentForm() {
     try {
-        const response = await fetch('/api/institutions?q=');
-        institutionsCache = await response.json();
-        return institutionsCache;
+        await setupDynamicFields();
+        await setupAutocomplete();
+        document.getElementById('paymentLoading').style.display = 'none';
+        document.querySelector('.payment-main').style.display = 'flex';
     } catch (error) {
-        console.error('Error fetching institutions:', error);
-        return [];
+        console.error('Error initializing payment form:', error);
+        document.getElementById('paymentLoading').style.display = 'none';
+        alert('Error loading payment form. Please refresh and try again.');
     }
 }
 
-institutionInput.addEventListener('focus', async function() {
-    this.readOnly = true;
-    const institutions = await fetchInstitutions();
-    displayInstitutionSuggestions(institutions);
-});
-
-institutionInput.addEventListener('blur', function() {
-    setTimeout(() => this.readOnly = false, 200);
-});
-
-let associationDebounceTimer;
-associationInput.addEventListener('input', function() {
-    if (!currentInstitutionId) return;
-    clearTimeout(associationDebounceTimer);
-    const query = this.value.trim();
-    associationDebounceTimer = setTimeout(() => fetchAssociations(query, currentInstitutionId), 300);
-});
-
-associationInput.addEventListener('focus', function() {
-    if (currentInstitutionId && associationSuggestionsContainer.children.length === 0) {
-        fetchAssociations('', currentInstitutionId);
-    } else if (currentInstitutionId && associationSuggestionsContainer.children.length > 0) {
-        associationSuggestionsContainer.style.display = 'block';
-    }
-});
-
-function fetchAssociations(query, institutionId) {
-    fetch(`/api/associations?q=${encodeURIComponent(query)}&institution_id=${institutionId}`)
-        .then(response => response.json())
-        .then(data => displayAssociationSuggestions(data))
-        .catch(error => console.error('Error fetching associations:', error));
+function setupDynamicFields() {
+    const container = document.getElementById('dynamic-fields-container');
+    const config = organizationTypeConfig[currentOrganizationType];
+    
+    container.innerHTML = '';
+    
+    config.dynamicFields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group dynamic-field';
+        
+        if (field === 'institution') {
+            fieldDiv.innerHTML = `
+                <label for="institution" class="form-label">${currentOrganizationType === 'institution' ? 'Institution Name' : 'Institution'}</label>
+                <input type="text" id="institution" name="institution" class="form-input" placeholder="${currentOrganizationType === 'institution' ? 'Enter institution name' : 'Enter institution name'}" autocomplete="off">
+                <div id="institution-suggestions" class="suggestions-container"></div>
+            `;
+        } else if (field === 'association') {
+            fieldDiv.innerHTML = `
+                <label for="association" class="form-label">${currentOrganizationType === 'non_student' ? 'Association Name' : 'Association'}</label>
+                <input type="text" id="association" name="association" class="form-input" placeholder="${currentOrganizationType === 'non_student' ? 'Enter association name' : 'Enter your association'}" autocomplete="off">
+                <div id="association-suggestions" class="suggestions-container"></div>
+            `;
+        }
+        
+        container.appendChild(fieldDiv);
+    });
+    
+    document.getElementById('matnumber-field').style.display = currentOrganizationType === 'student' ? 'block' : 'none';
 }
 
-function displayInstitutionSuggestions(institutions) {
-    suggestionsContainer.innerHTML = '';
-    if (institutions.length === 0) {
-        suggestionsContainer.style.display = 'none';
+function setupAutocomplete() {
+    const config = organizationTypeConfig[currentOrganizationType];
+    const searchInput = document.getElementById(config.searchField);
+    const suggestionsContainer = document.getElementById(config.searchField + '-suggestions');
+    
+    if (!searchInput) return;
+    
+    let debounceTimer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        debounceTimer = setTimeout(() => {
+            fetchAssociations(query, config.searchEndpoint);
+        }, 300);
+    });
+    
+    searchInput.addEventListener('focus', function() {
+        const query = this.value.trim();
+        if (query.length >= 2) {
+            fetchAssociations(query, config.searchEndpoint);
+        }
+    });
+    
+    if (config.associationEndpoint) {
+        const associationInput = document.getElementById('association');
+        const associationSuggestions = document.getElementById('association-suggestions');
+        
+        if (associationInput) {
+            associationInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                const institutionId = currentAssociationId;
+                
+                if (query.length < 2 || !institutionId) {
+                    associationSuggestions.innerHTML = '';
+                    associationSuggestions.style.display = 'none';
+                    return;
+                }
+                
+                debounceTimer = setTimeout(() => {
+                    fetch(`${config.associationEndpoint}?q=${encodeURIComponent(query)}&institution_id=${institutionId}`)
+                        .then(response => response.json())
+                        .then(data => displayAssociationSuggestions(data))
+                        .catch(error => console.error('Error fetching associations:', error));
+                }, 300);
+            });
+        }
+    }
+}
+
+async function fetchAssociations(query, endpoint) {
+    try {
+        const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        displaySuggestions(data, endpoint.includes('institution') ? 'institution' : 'association');
+    } catch (error) {
+        console.error('Error fetching associations:', error);
+    }
+}
+
+function displaySuggestions(items, type) {
+    const container = document.getElementById(type + '-suggestions');
+    container.innerHTML = '';
+    
+    if (items.length === 0) {
+        container.style.display = 'none';
         return;
     }
     
-    institutions.forEach(inst => {
+    items.forEach(item => {
         const suggestionItem = document.createElement('div');
         suggestionItem.className = 'suggestion-item';
-        suggestionItem.textContent = inst.name;
-        suggestionItem.setAttribute('data-id', inst.id);
+        suggestionItem.textContent = item.name || item.association_name;
+        suggestionItem.setAttribute('data-id', item.id);
+        suggestionItem.setAttribute('data-fees', item.fees);
+        suggestionItem.setAttribute('data-custom-fields', item.custom_fields);
         
         suggestionItem.addEventListener('click', () => {
-            institutionInput.value = inst.name;
-            currentInstitutionId = inst.id;
-            suggestionsContainer.innerHTML = '';
-            suggestionsContainer.style.display = 'none';
+            document.getElementById(type).value = item.name || item.association_name;
+            currentAssociationId = item.id;
+            currentFees = JSON.parse(item.fees || '{}');
+            currentCustomFields = JSON.parse(item.custom_fields || '[]');
             
-            associationInput.disabled = false;
-            associationInput.placeholder = "Enter association name";
-            associationInput.value = '';
-            amountContainer.innerHTML = '';
-            currentFees = null;
-            clearSummaryBox();
+            container.innerHTML = '';
+            container.style.display = 'none';
             
-            fetchAssociations('', currentInstitutionId);
+            renderFeeOptions(currentFees);
+            renderCustomFields(currentCustomFields);
         });
         
-        suggestionsContainer.appendChild(suggestionItem);
+        container.appendChild(suggestionItem);
     });
     
-    suggestionsContainer.style.display = 'block';
+    container.style.display = 'block';
 }
 
 function displayAssociationSuggestions(associations) {
-    associationSuggestionsContainer.innerHTML = '';
+    const container = document.getElementById('association-suggestions');
+    container.innerHTML = '';
+    
     if (associations.length === 0) {
-        associationSuggestionsContainer.style.display = 'none';
+        container.style.display = 'none';
         return;
     }
     
@@ -164,24 +200,29 @@ function displayAssociationSuggestions(associations) {
         suggestionItem.textContent = assoc.association_name;
         suggestionItem.setAttribute('data-fees', assoc.fees);
         suggestionItem.setAttribute('data-id', assoc.id);
+        suggestionItem.setAttribute('data-custom-fields', assoc.custom_fields);
         
         suggestionItem.addEventListener('click', () => {
-            associationInput.value = assoc.association_name;
+            document.getElementById('association').value = assoc.association_name;
             currentFees = JSON.parse(assoc.fees);
-            associationSuggestionsContainer.innerHTML = '';
-            associationSuggestionsContainer.style.display = 'none';
+            currentCustomFields = JSON.parse(assoc.custom_fields || '[]');
+            
+            container.innerHTML = '';
+            container.style.display = 'none';
+            
             renderFeeOptions(currentFees);
+            renderCustomFields(currentCustomFields);
         });
         
-        associationSuggestionsContainer.appendChild(suggestionItem);
+        container.appendChild(suggestionItem);
     });
     
-    associationSuggestionsContainer.style.display = 'block';
+    container.style.display = 'block';
 }
 
 function renderFeeOptions(fees) {
-    amountContainer.innerHTML = '';
-    clearSummaryBox();
+    const container = document.getElementById('amount-container');
+    container.innerHTML = '';
     
     if (typeof fees === 'object' && Object.keys(fees).length > 1) {
         const feeOptionsContainer = document.createElement('div');
@@ -212,7 +253,7 @@ function renderFeeOptions(fees) {
             feeOptionsContainer.appendChild(optionWrapper);
         });
         
-        amountContainer.appendChild(feeOptionsContainer);
+        container.appendChild(feeOptionsContainer);
     } else {
         const amount = typeof fees === 'object' ? Object.values(fees)[0] : fees;
         const amountInput = document.createElement('input');
@@ -221,21 +262,79 @@ function renderFeeOptions(fees) {
         amountInput.value = `₦${parseFloat(amount).toLocaleString()}`;
         amountInput.disabled = true;
         amountInput.name = 'amount';
-        amountContainer.appendChild(amountInput);
+        container.appendChild(amountInput);
         showSummaryBox(amount);
     }
 }
 
-document.addEventListener('click', function(e) {
-    if (!institutionInput.contains(e.target) && !suggestionsContainer.contains(e.target)) suggestionsContainer.style.display = 'none';
-    if (!associationInput.contains(e.target) && !associationSuggestionsContainer.contains(e.target)) associationSuggestionsContainer.style.display = 'none';
-});
+function renderCustomFields(customFields) {
+    const container = document.getElementById('custom-fields-container');
+    container.innerHTML = '';
+    
+    customFields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group';
+        fieldDiv.innerHTML = `
+            <label for="custom_${field.name}" class="form-label">${field.name}</label>
+            <input type="text" id="custom_${field.name}" name="custom_${field.name}" class="form-input" placeholder="Enter ${field.name}" ${field.required ? 'required' : ''}>
+        `;
+        container.appendChild(fieldDiv);
+    });
+}
+
+async function getTotalAmount(inputAmount) {
+    const formFeeData = new FormData();
+    formFeeData.append('amount', inputAmount);
+    try {
+        const response = await fetch('/api/service-fee', { method: 'POST', body: formFeeData });
+        const data = await response.json();
+        return data.fee;
+    } catch(error) {
+        const summaryBoxes = document.querySelectorAll('.summary-box');
+        const lastSummaryBox = summaryBoxes[summaryBoxes.length - 1];
+        lastSummaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Error fetching service charge. Your internet connection is probably broken.</span><span style="display: none" class="summary-note"><strong><br>Please try again later, or generate an invoice and pay with the generated ARN later.</strong></span></div></div>`;
+        document.querySelector('.submit-btn').style.display = 'none';
+        document.getElementById('tos').style.display = 'none';
+        document.getElementById('generateInvoice').style.display = 'none';
+        return 0;
+    }
+}
+
+function showSummaryBox(associationAmount, category = '') {
+    getTotalAmount(parseFloat(associationAmount)).then(totalAmount => {
+        selectedAmount = totalAmount;
+        
+        let summaryBox = document.getElementById('summary-box');
+        if (!summaryBox) {
+            summaryBox = document.createElement('div');
+            summaryBox.id = 'summary-box';
+            summaryBox.className = 'summary-box';
+            document.getElementById('tos').parentNode.insertBefore(summaryBox, document.getElementById('tos'));
+        }
+        
+        const categoryText = category ? ` (${category})` : '';
+        summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Includes service charge</div></div>`;
+        updatePaymentButton(totalAmount);
+    });
+}
+
+function updatePaymentButton(totalAmount = null) {
+    const submitBtn = document.querySelector('#biller-form .submit-btn');
+    submitBtn.innerHTML = totalAmount !== null ? `Pay <strong>₦${parseFloat(totalAmount).toLocaleString()}</strong>` : 'Proceed to Payment';
+}
+
+function clearSummaryBox() {
+    const summaryBox = document.getElementById('summary-box');
+    if (summaryBox) summaryBox.remove();
+    updatePaymentButton();
+}
 
 function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
-    const institution = institutionInput.value;
-    const association = associationInput.value;
+    const config = organizationTypeConfig[currentOrganizationType];
+    const institution = currentOrganizationType !== 'non_student' ? document.getElementById('institution')?.value : '';
+    const association = currentOrganizationType !== 'institution' ? document.getElementById('association')?.value : '';
     const fullname = document.getElementById('fullname').value;
-    const matnumber = document.getElementById('matnumber').value;
+    const matnumber = currentOrganizationType === 'student' ? document.getElementById('matnumber')?.value : '';
     const email = document.getElementById('email_address').value;
     const phone = document.getElementById('phone_number').value;
     
@@ -251,8 +350,26 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
         category = document.querySelector(`label[for="${selectedFee.id}"] .fee-category`).textContent;
     }
     
-    if (!institution || !association || !fullname || !matnumber || !amount || !phone) {
-        alert('Please FILL in ALL required fields');
+    const customFieldsData = {};
+    currentCustomFields.forEach(field => {
+        const fieldValue = document.getElementById(`custom_${field.name}`)?.value;
+        if (fieldValue) {
+            customFieldsData[field.name] = fieldValue;
+        }
+    });
+    
+    if (!institution && currentOrganizationType !== 'non_student') {
+        alert('Please select an institution');
+        return false;
+    }
+    
+    if (!association && currentOrganizationType !== 'institution') {
+        alert('Please select an association');
+        return false;
+    }
+    
+    if (!fullname || !amount || !phone) {
+        alert('Please fill in all required fields');
         return false;
     }
     
@@ -269,7 +386,18 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
     form.action = submitEndpoint;
     form.style.display = 'none';
     
-    const fields = { 'institution': institution, 'institution_id': currentInstitutionId, 'association': association, 'fullname': fullname, 'matnumber': matnumber, 'email': email, 'phone': phone, 'amount': amount };
+    const fields = {
+        'organization_type': currentOrganizationType,
+        'institution': institution,
+        'institution_id': currentAssociationId,
+        'association': association,
+        'fullname': fullname,
+        'matnumber': matnumber,
+        'email': email,
+        'phone': phone,
+        'amount': amount,
+        'custom_fields_data': JSON.stringify(customFieldsData)
+    };
     
     if (category) fields['category'] = category;
     if (isGenerateInvoice) fields['generate_invoice'] = 'true';
@@ -287,165 +415,184 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
     return true;
 }
 
-billerForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    handleFormSubmission(endpoint, false);
-});
-
-document.getElementById('generateInvoice').addEventListener('click', function(e){
-    e.preventDefault();
-    handleFormSubmission('/generate-invoice', true);
-});
-
-const invoiceNumberInput = document.getElementById('invoice-number');
-const retrieveBtn = document.querySelector('#invoice-tab .submit-btn');
-let invoiceData = null;
-
-invoiceNumberInput.addEventListener('input', function(e) {
-    this.value = this.value.replace(/\D/g, '');
-});
-
-invoiceForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const invoiceNumber = invoiceNumberInput.value.trim();
-    
-    if (!invoiceNumber) {
-        alert('Please enter the ARN');
-        return;
-    }
-
-    const originalBtnText = retrieveBtn.innerHTML;
-    const loadingGif = document.createElement('img');
-    loadingGif.src = '/static/img/loading.gif';
-    loadingGif.alt = 'Loading';
-    loadingGif.className = 'loading-gif';
-    loadingGif.style.cssText = 'height: 20px; margin-bottom: 10px;';
-    
-    retrieveBtn.parentNode.insertBefore(loadingGif, retrieveBtn);
-    retrieveBtn.innerHTML = 'Retrieving...';
-    retrieveBtn.disabled = true;
-
-    try {
-        const formData = new FormData();
-        formData.append('arn', invoiceNumber);
-        
-        const response = await fetch('/retrieve-invoice', {
-            method: 'POST',
-            body: formData
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name="pay_organization_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.organization-type-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            this.closest('.organization-type-option').classList.add('selected');
+            selectOrganizationType();
         });
-
-        const result = await response.json();
+    });
+    
+    document.getElementById('biller-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleFormSubmission(endpoint, false);
+    });
+    
+    document.getElementById('generateInvoice').addEventListener('click', function(e){
+        e.preventDefault();
+        handleFormSubmission('/generate-invoice', true);
+    });
+    
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(tab => tab.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`${btn.getAttribute('data-tab')}-tab`).classList.add('active');
+        });
+    });
+    
+    const invoiceForm = document.getElementById('invoice-form');
+    const invoiceNumberInput = document.getElementById('invoice-number');
+    const retrieveBtn = document.querySelector('#invoice-tab .submit-btn');
+    let invoiceData = null;
+    
+    invoiceNumberInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '');
+    });
+    
+    invoiceForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const invoiceNumber = invoiceNumberInput.value.trim();
         
-        if (result.success) {
-            invoiceData = result.data;
-            displayInvoiceDetails(result.data, invoiceNumber);
-        } else {
-            alert(result.message || 'Invoice not found');
+        if (!invoiceNumber) {
+            alert('Please enter the ARN');
+            return;
+        }
+    
+        const originalBtnText = retrieveBtn.innerHTML;
+        const loadingGif = document.createElement('img');
+        loadingGif.src = '/static/img/loading.gif';
+        loadingGif.alt = 'Loading';
+        loadingGif.className = 'loading-gif';
+        loadingGif.style.cssText = 'height: 20px; margin-bottom: 10px;';
+        
+        retrieveBtn.parentNode.insertBefore(loadingGif, retrieveBtn);
+        retrieveBtn.innerHTML = 'Retrieving...';
+        retrieveBtn.disabled = true;
+    
+        try {
+            const formData = new FormData();
+            formData.append('arn', invoiceNumber);
+            
+            const response = await fetch('/retrieve-invoice', {
+                method: 'POST',
+                body: formData
+            });
+    
+            const result = await response.json();
+            
+            if (result.success) {
+                invoiceData = result.data;
+                displayInvoiceDetails(result.data, invoiceNumber);
+            } else {
+                alert(result.message || 'Invoice not found');
+                loadingGif.remove();
+                retrieveBtn.innerHTML = originalBtnText;
+                retrieveBtn.disabled = false;
+            }
+        } catch (error) {
+            alert('Error retrieving invoice. Please try again.');
             loadingGif.remove();
             retrieveBtn.innerHTML = originalBtnText;
             retrieveBtn.disabled = false;
         }
-    } catch (error) {
-        alert('Error retrieving invoice. Please try again.');
-        loadingGif.remove();
-        retrieveBtn.innerHTML = originalBtnText;
-        retrieveBtn.disabled = false;
-    }
-});
-
-function displayInvoiceDetails(data, arn) {
-    const loadingGif = document.querySelector('.loading-gif');
-    if (loadingGif) loadingGif.remove();
-    
-    let detailsContainer = document.getElementById('invoice-details-container');
-    if (!detailsContainer) {
-        detailsContainer = document.createElement('div');
-        detailsContainer.id = 'invoice-details-container';
-        invoiceForm.appendChild(detailsContainer);
-    }
-    
-    const categoryRow = data.category ? `<div class="detail-row"><span class="detail-label">Category: </span><span class="detail-value">${data.category}</span></div>` : '';
-    
-    detailsContainer.innerHTML = `
-        <div class="payment-details">
-            <div class="detail-row">
-                <span class="detail-label">ARN:</span>
-                <span class="detail-value reference">${arn}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Institution:</span>
-                <span class="detail-value">${data.institution}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Association:</span>
-                <span class="detail-value">${data.association}</span>
-            </div>
-            ${categoryRow}
-            <div class="detail-row">
-                <span class="detail-label">Amount:</span>
-                <span class="detail-value">₦${parseFloat(data.amount).toLocaleString()}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Name:</span>
-                <span class="detail-value">${data.fullname}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Matric Number:</span>
-                <span class="detail-value">${data.matnumber}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Email:</span>
-                <span class="detail-value">${data.email}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Phone:</span>
-                <span class="detail-value">${data.phone}</span>
-            </div>
-        </div>
-    `;
-    
-    retrieveBtn.innerHTML = `Pay <strong>₦${parseFloat(data.amount).toLocaleString()}</strong>`;
-    retrieveBtn.disabled = false;
-    retrieveBtn.onclick = function(e) {
-        e.preventDefault();
-        payInvoice(data, arn);
-    };
-}
-
-function payInvoice(data, arn) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/init-payment';
-    form.style.display = 'none';
-    
-    const fields = {
-        'institution': data.institution,
-        'institution_id': data.institution_id,
-        'association': data.association,
-        'fullname': data.fullname,
-        'matnumber': data.matnumber,
-        'email': data.email,
-        'phone': data.phone,
-        'amount': data.amount,
-        'arn': arn
-    };
-    
-    if (data.category) fields['category'] = data.category;
-    
-    Object.keys(fields).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = fields[key];
-        form.appendChild(input);
     });
     
-    document.body.appendChild(form);
-    form.submit();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    associationInput.disabled = true;
-    associationInput.placeholder = "Select institution first";
-    fetchInstitutions();
+    function displayInvoiceDetails(data, arn) {
+        const loadingGif = document.querySelector('.loading-gif');
+        if (loadingGif) loadingGif.remove();
+        
+        let detailsContainer = document.getElementById('invoice-details-container');
+        if (!detailsContainer) {
+            detailsContainer = document.createElement('div');
+            detailsContainer.id = 'invoice-details-container';
+            invoiceForm.appendChild(detailsContainer);
+        }
+        
+        const categoryRow = data.category ? `<div class="detail-row"><span class="detail-label">Category: </span><span class="detail-value">${data.category}</span></div>` : '';
+        
+        detailsContainer.innerHTML = `
+            <div class="payment-details">
+                <div class="detail-row">
+                    <span class="detail-label">ARN:</span>
+                    <span class="detail-value reference">${arn}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Institution:</span>
+                    <span class="detail-value">${data.institution}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Association:</span>
+                    <span class="detail-value">${data.association}</span>
+                </div>
+                ${categoryRow}
+                <div class="detail-row">
+                    <span class="detail-label">Amount:</span>
+                    <span class="detail-value">₦${parseFloat(data.amount).toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${data.fullname}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Matric Number:</span>
+                    <span class="detail-value">${data.matnumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">${data.email}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone:</span>
+                    <span class="detail-value">${data.phone}</span>
+                </div>
+            </div>
+        `;
+        
+        retrieveBtn.innerHTML = `Pay <strong>₦${parseFloat(data.amount).toLocaleString()}</strong>`;
+        retrieveBtn.disabled = false;
+        retrieveBtn.onclick = function(e) {
+            e.preventDefault();
+            payInvoice(data, arn);
+        };
+    }
+    
+    function payInvoice(data, arn) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/init-payment';
+        form.style.display = 'none';
+        
+        const fields = {
+            'institution': data.institution,
+            'institution_id': data.institution_id,
+            'association': data.association,
+            'fullname': data.fullname,
+            'matnumber': data.matnumber,
+            'email': data.email,
+            'phone': data.phone,
+            'amount': data.amount,
+            'arn': arn
+        };
+        
+        if (data.category) fields['category'] = data.category;
+        
+        Object.keys(fields).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
 });
