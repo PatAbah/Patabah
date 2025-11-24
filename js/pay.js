@@ -219,8 +219,8 @@ function displaySuggestions(items, type) {
         suggestionItem.className = 'suggestion-item';
         suggestionItem.textContent = item.name || item.association_name;
         suggestionItem.setAttribute('data-id', item.id);
-        suggestionItem.setAttribute('data-fees', item.fees);
-        suggestionItem.setAttribute('data-custom-fields', item.custom_fields);
+        suggestionItem.setAttribute('data-fees', item.fees || '{}');
+        suggestionItem.setAttribute('data-custom-fields', item.custom_fields || '[]');
         
         suggestionItem.addEventListener('click', () => {
             document.getElementById(type).value = item.name || item.association_name;
@@ -230,6 +230,25 @@ function displaySuggestions(items, type) {
             
             container.innerHTML = '';
             container.style.display = 'none';
+            
+            if (currentOrganizationType === 'student' && type === 'institution') {
+                const associationInput = document.getElementById('association');
+                const associationSuggestions = document.getElementById('association-suggestions');
+                
+                if (associationInput) {
+                    associationInput.value = '';
+                    
+                    fetch(`/api/search-student-associations?institution_id=${currentAssociationId}&q=`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                displayAssociationSuggestions(data);
+                                associationSuggestions.style.display = 'block';
+                            }
+                        })
+                        .catch(error => console.error('Error fetching associations:', error));
+                }
+            }
             
             renderFeeOptions(currentFees);
             renderCustomFields(currentCustomFields);
@@ -253,14 +272,14 @@ function displayAssociationSuggestions(associations) {
     associations.forEach(assoc => {
         const suggestionItem = document.createElement('div');
         suggestionItem.className = 'suggestion-item';
-        suggestionItem.textContent = assoc.association_name;
+        suggestionItem.textContent = assoc.name || assoc.association_name;
         suggestionItem.setAttribute('data-fees', assoc.fees);
         suggestionItem.setAttribute('data-id', assoc.id);
-        suggestionItem.setAttribute('data-custom-fields', assoc.custom_fields);
+        suggestionItem.setAttribute('data-custom-fields', assoc.custom_fields || '[]');
         
         suggestionItem.addEventListener('click', () => {
-            document.getElementById('association').value = assoc.association_name;
-            currentFees = JSON.parse(assoc.fees);
+            document.getElementById('association').value = assoc.name || assoc.association_name;
+            currentFees = JSON.parse(assoc.fees || '{}');
             currentCustomFields = JSON.parse(assoc.custom_fields || '[]');
             
             container.innerHTML = '';
