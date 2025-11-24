@@ -655,7 +655,6 @@ ul ul ul {
         width: 100%;
         max-width: 1000px;
         padding: var(--spacing-md);
-        padding-bottom: 1px;
     }
     .nav-menu {
         width: 100%;
