@@ -376,9 +376,11 @@ async function getTotalAmount(inputAmount) {
 }
 
 function showSummaryBox(associationAmount, category = '') {
+    if (!associationAmount || parseFloat(associationAmount) <= 0) {
+        return;
+    }
     getTotalAmount(parseFloat(associationAmount)).then(totalAmount => {
         selectedAmount = totalAmount;
-        if (totalAmount <=0) return;
         let summaryBox = document.getElementById('summary-box');
         if (!summaryBox) {
             summaryBox = document.createElement('div');
@@ -386,7 +388,6 @@ function showSummaryBox(associationAmount, category = '') {
             summaryBox.className = 'summary-box';
             document.getElementById('tos').parentNode.insertBefore(summaryBox, document.getElementById('tos'));
         }
-        
         const categoryText = category ? ` (${category})` : '';
         summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Includes service charge</div></div>`;
         updatePaymentButton(totalAmount);
