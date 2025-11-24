@@ -378,7 +378,7 @@ async function getTotalAmount(inputAmount) {
 function showSummaryBox(associationAmount, category = '') {
     getTotalAmount(parseFloat(associationAmount)).then(totalAmount => {
         selectedAmount = totalAmount;
-        
+        if (totalAmount <=0) return;
         let summaryBox = document.getElementById('summary-box');
         if (!summaryBox) {
             summaryBox = document.createElement('div');
