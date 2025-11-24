@@ -109,10 +109,37 @@ function setupAutocomplete() {
         const query = this.value.trim();
         if (query.length >= 2) {
             fetchAssociations(query, config.searchEndpoint);
+        } else if (currentOrganizationType === 'student' && config.searchField === 'institution') {
+            fetchAssociations('', config.searchEndpoint);
         }
     });
     
-    if (config.associationEndpoint) {
+    // when institution is selected for student type
+    if (currentOrganizationType === 'student' && config.searchField === 'institution') {
+        const originalAddEventListener = searchInput.addEventListener;
+        searchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                const institutionInput = document.getElementById('institution');
+                const associationInput = document.getElementById('association');
+                const associationSuggestions = document.getElementById('association-suggestions');
+                
+                if (institutionInput.value && currentAssociationId && associationInput) {
+                    // Auto-fetch all associations for this institution
+                    fetch(`${config.associationEndpoint}?institution_id=${currentAssociationId}&q=`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                displayAssociationSuggestions(data);
+                                associationSuggestions.style.display = 'block';
+                            }
+                        })
+                        .catch(error => console.error('Error fetching associations:', error));
+                }
+            }, 200);
+        });
+    }
+    
+    if (config.associationEndpoint && currentOrganizationType === 'student') {
         const associationInput = document.getElementById('association');
         const associationSuggestions = document.getElementById('association-suggestions');
         
@@ -122,7 +149,13 @@ function setupAutocomplete() {
                 const query = this.value.trim();
                 const institutionId = currentAssociationId;
                 
-                if (query.length < 2 || !institutionId) {
+                if (!institutionId) {
+                    associationSuggestions.innerHTML = '';
+                    associationSuggestions.style.display = 'none';
+                    return;
+                }
+                
+                if (query.length < 2) {
                     associationSuggestions.innerHTML = '';
                     associationSuggestions.style.display = 'none';
                     return;
@@ -134,6 +167,29 @@ function setupAutocomplete() {
                         .then(data => displayAssociationSuggestions(data))
                         .catch(error => console.error('Error fetching associations:', error));
                 }, 300);
+            });
+            
+            associationInput.addEventListener('focus', function() {
+                const query = this.value.trim();
+                const institutionId = currentAssociationId;
+                
+                if (!institutionId) {
+                    alert('Please select an institution first');
+                    return;
+                }
+                
+                if (query.length >= 2) {
+                    fetch(`${config.associationEndpoint}?q=${encodeURIComponent(query)}&institution_id=${institutionId}`)
+                        .then(response => response.json())
+                        .then(data => displayAssociationSuggestions(data))
+                        .catch(error => console.error('Error fetching associations:', error));
+                } else {
+                    // when focused with empty query
+                    fetch(`${config.associationEndpoint}?institution_id=${institutionId}&q=`)
+                        .then(response => response.json())
+                        .then(data => displayAssociationSuggestions(data))
+                        .catch(error => console.error('Error fetching associations:', error));
+                }
             });
         }
     }
