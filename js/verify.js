@@ -123,7 +123,7 @@ function showVerifyResult(result, arn=false) {
                         <span class="detail-value">${escapeHtml(result.payment.fullname)}</span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Matric Number:</span>
+                        <span class="detail-label">${escapeHtml(result.payment.identifierTag)}:</span>
                         <span class="detail-value">${escapeHtml(result.payment.matnumber)}</span>
                     </div>
                     <div class="detail-item">
