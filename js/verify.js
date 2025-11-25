@@ -109,7 +109,12 @@ function showVerifyResult(result, arn=false) {
             <div class="payment-info">
                 <center>
                     <div class="detail-item">
-                        <span class="detail-value"><font style="font-weight: 400 !important">${escapeHtml(result.payment.institution_name)} /</font> ${escapeHtml(result.payment.association_name)}</span>
+                        <span class="detail-value">
+                            ${result.payment.institution_name && result.payment.institution_name !== 'N/A' ? 
+                                `<font style="font-weight: 400 !important">${escapeHtml(result.payment.institution_name)} /</font> ` : 
+                                ''}
+                            ${escapeHtml(result.payment.association_name)}
+                        </span>
                     </div>
                 </center>
                 <div class="amount-display">
