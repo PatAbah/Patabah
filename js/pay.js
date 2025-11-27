@@ -671,6 +671,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(form);
         form.submit();
     }
-    document.getElementById("loading-container").sttle.display = "none";
-    document.getElementById("organizationTypeModal").sttle.display = "block";
+    document.getElementById("loading-container").style.display = "none";
+    document.getElementById("organizationTypeModal").style.display = "block";
 });
