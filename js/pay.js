@@ -299,35 +299,47 @@ function renderFeeOptions(fees) {
     const container = document.getElementById('amount-container');
     container.innerHTML = '';
     
-    const feeOptionsContainer = document.createElement('div');
-    feeOptionsContainer.className = 'fee-options-container';
-    feeOptionsContainer.id = 'fee-options';
-    
-    Object.entries(fees).forEach(([category, amount], index) => {
-        const optionWrapper = document.createElement('div');
-        optionWrapper.className = `fee-option-wrapper ${index === 0 ? 'selected' : ''}`;
-        optionWrapper.setAttribute('data-amount', amount);
-        optionWrapper.setAttribute('data-category', category);  // ← THIS WAS MISSING
+    if (typeof fees === 'object' && Object.keys(fees).length > 1) {
+        const feeOptionsContainer = document.createElement('div');
+        feeOptionsContainer.className = 'fee-options-container';
         
-        const radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.name = 'fee_category';
-        radioInput.value = amount;
-        radioInput.id = `fee_${index}`;
-        radioInput.className = 'fee-radio';
-        if (index === 0) radioInput.checked = true;
+        Object.entries(fees).forEach(([category, amount]) => {
+            const optionWrapper = document.createElement('div');
+            optionWrapper.className = 'fee-option-wrapper';
+            
+            const radioInput = document.createElement('input');
+            radioInput.type = 'radio';
+            radioInput.name = 'fee_category';
+            radioInput.value = amount;
+            radioInput.id = `fee_${category}`;
+            radioInput.className = 'fee-radio';
+            
+            const radioLabel = document.createElement('label');
+            radioLabel.htmlFor = `fee_${category}`;
+            radioLabel.className = 'fee-label';
+            radioLabel.innerHTML = `<span class="fee-category">${category}</span><span class="fee-amount">₦${parseFloat(amount).toLocaleString()}</span>`;
+            
+            radioInput.addEventListener('change', function() {
+                if (this.checked) showSummaryBox(amount, category);
+            });
+            
+            optionWrapper.appendChild(radioInput);
+            optionWrapper.appendChild(radioLabel);
+            feeOptionsContainer.appendChild(optionWrapper);
+        });
         
-        const radioLabel = document.createElement('label');
-        radioLabel.htmlFor = `fee_${index}`;
-        radioLabel.className = 'fee-label';
-        radioLabel.innerHTML = `<span class="fee-category">${category}</span><span class="fee-amount">₦${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>`;
-        
-        optionWrapper.appendChild(radioInput);
-        optionWrapper.appendChild(radioLabel);
-        feeOptionsContainer.appendChild(optionWrapper);
-    });
-    
-    container.appendChild(feeOptionsContainer);
+        container.appendChild(feeOptionsContainer);
+    } else {
+        const amount = typeof fees === 'object' ? Object.values(fees)[0] : fees;
+        const amountInput = document.createElement('input');
+        amountInput.type = 'text';
+        amountInput.className = 'form-input';
+        amountInput.value = `₦${parseFloat(amount).toLocaleString()}`;
+        amountInput.disabled = true;
+        amountInput.name = 'amount';
+        container.appendChild(amountInput);
+        showSummaryBox(amount);
+    }
 }
 
 function renderCustomFields(customFields) {
