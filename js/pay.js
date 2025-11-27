@@ -389,7 +389,7 @@ function showSummaryBox(associationAmount, category = '') {
             document.getElementById('tos').parentNode.insertBefore(summaryBox, document.getElementById('tos'));
         }
         const categoryText = category ? ` (${category})` : '';
-        summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Includes service charge</div></div>`;
+        summaryBox.innerHTML = `<div class="summary-content"><div class="summary-row"><span>Amount to pay:</span><span><strong>₦${totalAmount.toLocaleString()}</strong></span></div><div class="summary-note">Service charge + gateway & FGN Tax all included</div></div>`;
         updatePaymentButton(totalAmount);
     });
 }
