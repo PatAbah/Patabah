@@ -492,6 +492,8 @@ function handleFormSubmission(submitEndpoint, isGenerateInvoice = false) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById("loading-container").sttle.display = "none";
+    document.getElementById("organizationTypeModal").sttle.display = "block";
     document.querySelectorAll('input[name="pay_organization_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.organization-type-option').forEach(option => {
