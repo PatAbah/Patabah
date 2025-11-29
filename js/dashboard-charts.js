@@ -15,8 +15,6 @@ function initializeCharts() {
 }
 
 function loadChartData(range = '30') {
-    console.log('Loading chart data for range:', range);
-    
     const revenueContainer = document.getElementById('revenueChart')?.parentElement;
     const volumeContainer = document.getElementById('volumeChart')?.parentElement;
     
@@ -25,8 +23,6 @@ function loadChartData(range = '30') {
     fetch('/ajax/dashboard/chart-data?range=' + range)
         .then(response => response.json())
         .then(data => {
-            console.log('Chart data response:', data);
-            
             if (data.success && data.stats && data.stats.length > 0) {
                 createCharts(data.stats);
             } else {
@@ -34,7 +30,6 @@ function loadChartData(range = '30') {
             }
         })
         .catch(error => {
-            console.error('Error loading chart data:', error);
             showErrorState(revenueContainer, volumeContainer);
         });
 }
@@ -58,8 +53,6 @@ function showErrorState(revenueContainer, volumeContainer) {
 }
 
 function createCharts(chartData) {
-    console.log('Creating charts with data:', chartData);
-    
     // Destroy existing charts before creating new ones
     if (revenueChart) {
         revenueChart.destroy();
@@ -80,13 +73,11 @@ function createCharts(chartData) {
 function createRevenueChart(chartData) {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) {
-        console.error('Revenue chart canvas not found');
         return;
     }
     
     const chartContext = ctx.getContext('2d');
     if (!chartContext) {
-        console.error('Cannot get 2D context for revenue chart');
         return;
     }
     
@@ -147,20 +138,16 @@ function createRevenueChart(chartData) {
             }
         }
     });
-    
-    console.log('Revenue chart created successfully');
-}
+} 
 
 function createVolumeChart(chartData) {
     const ctx = document.getElementById('volumeChart');
     if (!ctx) {
-        console.error('Volume chart canvas not found');
         return;
     }
     
     const chartContext = ctx.getContext('2d');
     if (!chartContext) {
-        console.error('Cannot get 2D context for volume chart');
         return;
     }
     
@@ -210,16 +197,13 @@ function createVolumeChart(chartData) {
             }
         }
     });
-    
-    console.log('Volume chart created successfully');
-}
+} 
 
 function refreshCharts() {
     const timeRange = document.getElementById('timeRange');
     if (!timeRange) return;
     
     const range = timeRange.value;
-    console.log('Refreshing charts with range:', range);
     loadChartData(range);
 }
 
