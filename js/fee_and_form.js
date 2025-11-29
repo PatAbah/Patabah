@@ -1,208 +1,290 @@
-const feeStructureForm = document.getElementById('feeStructureForm');
-const paymentFormDataForm = document.getElementById('paymentFormDataForm');
-
-if (feeStructureForm) {
-    feeStructureForm.addEventListener('submit', handleFeeStructureUpdate);
-}
-
-if (paymentFormDataForm) {
-    paymentFormDataForm.addEventListener('submit', handlePaymentFormDataUpdate);
-}
-
-function handleFeeStructureUpdate(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('.submit-btn');
-    const originalText = submitBtn.innerHTML;
-
-    submitBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Updating...';
-    submitBtn.disabled = true;
-
-    fetch('/update-fee-structure', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Fee structure updated successfully!', 'success');
-        } else {
-            showNotification(data.message || 'Update failed', 'error');
-        }
-    })
-    .catch(error => {
-        showNotification('Error updating fee structure', 'error');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-}
-
-function handlePaymentFormDataUpdate(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('.submit-btn');
-    const originalText = submitBtn.innerHTML;
-
-    submitBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Updating...';
-    submitBtn.disabled = true;
-
-    fetch('/update-payment-form-data', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Form data updated successfully!', 'success');
-        } else {
-            showNotification(data.message || 'Update failed', 'error');
-        }
-    })
-    .catch(error => {
-        showNotification('Error updating form data', 'error');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-}
-
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 4px;
-        color: white;
-        z-index: 10000;
-        font-weight: 500;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-function openChargesManagementModal() {
-    const modal = document.getElementById('chargesManagementModal');
-    modal.style.display = 'block';
-    fetchCurrentMemberFee();
-}
-
-function closeChargesManagementModal() {
-    document.getElementById('chargesManagementModal').style.display = 'none';
-}
-
-function fetchCurrentMemberFee() {
-    fetch('/api/get-member-fee')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const slider = document.getElementById('memberFeeSlider');
-                const valueDisplay = document.getElementById('memberFeeValue');
-                slider.value = data.member_fee;
-                valueDisplay.textContent = data.member_fee;
-                updateFeeBreakdown(data.member_fee, data.fee_structure);
-            }
-        })
-        .catch(error => console.error('Error fetching member fee:', error));
-}
-
-function updateFeeBreakdown(memberFee, feeStructure) {
-    const breakdownContent = document.getElementById('breakdownContent');
-    
-    if (!feeStructure || Object.keys(feeStructure).length === 0) {
-        breakdownContent.innerHTML = '<p>No fee structure available.</p>';
-        return;
-    }
-
-    let html = '';
-    Object.entries(feeStructure).forEach(([category, data]) => {
-        const mainFee = parseFloat(data.fee);
-        const calculatedFee = parseFloat(data.calculated_fee);
-        const charge = calculatedFee - mainFee;
-        const memberPaysCharge = charge * (memberFee / 100);
-        const orgPaysCharge = charge - memberPaysCharge;
-        const orgReceives = mainFee - orgPaysCharge;
-        const memberPaysTotal = mainFee + memberPaysCharge;
-
-        html += `
-            <div class="fee-category-breakdown">
-                <strong>${category}</strong>
-                <div class="fee-details">
-                    <div>Main Fee: ₦${mainFee.toLocaleString()}</div>
-                    <div>Member Pays: ₦${memberPaysTotal.toLocaleString()} (includes ₦${memberPaysCharge.toLocaleString()} charge)</div>
-                    <div>Association Receives: ₦${orgReceives.toLocaleString()}</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    breakdownContent.innerHTML = html;
-}
-
-function updateMemberFee() {
-    const memberFee = document.getElementById('memberFeeSlider').value;
-    
-    fetch('/api/update-member-fee', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'member_fee=' + memberFee
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Member fee updated successfully!', 'success');
-            closeChargesManagementModal();
-        } else {
-            showNotification('Error updating member fee: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showNotification('Error updating member fee', 'error');
-        console.error('Error:', error);
-    });
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    const memberFeeSlider = document.getElementById('memberFeeSlider');
-    if (memberFeeSlider) {
-        memberFeeSlider.addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('memberFeeValue').textContent = value;
-            
-            fetch('/api/get-fee-breakdown?member_fee=' + value)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateFeeBreakdown(value, data.fee_structure);
-                    }
-                })
-                .catch(error => console.error('Error fetching fee breakdown:', error));
+    let currentSettings = {};
+    
+    initializeSettings();
+    setupEventListeners();
+    
+    function initializeSettings() {
+        fetch('/api/association-settings')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentSettings = data.data;
+                    renderFeeStructure();
+                    renderCustomFields();
+                    renderChargeManagement();
+                } else {
+                    showNotification(data.message || 'Failed to load settings', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error loading settings', 'error');
+                console.error('Error:', error);
+            });
+    }
+    
+    function renderFeeStructure() {
+        const container = document.getElementById('feeStructureContainer');
+        if (!container) return;
+        
+        let html = '';
+        Object.entries(currentSettings.fees || {}).forEach(([category, amount]) => {
+            html += `
+                <div class="fee-category">
+                    <input type="text" class="form-input" value="${category}" placeholder="Category name">
+                    <input type="number" class="form-input" value="${amount}" placeholder="Amount">
+                    <button type="button" class="secondary-btn" onclick="removeFeeCategory(this)">Remove</button>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html || '<p>No fee categories yet. Add one below.</p>';
+    }
+    
+    function renderCustomFields() {
+        const container = document.getElementById('customFieldsContainer');
+        if (!container) return;
+        
+        let html = '';
+        (currentSettings.custom_fields || []).forEach((field, index) => {
+            html += `
+                <div class="custom-field">
+                    <input type="text" class="form-input" value="${field}" placeholder="Field name">
+                    <button type="button" class="secondary-btn" onclick="removeCustomField(this)">Remove</button>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html || '<p>No custom fields yet. Add one below.</p>';
+    }
+    
+    function renderChargeManagement() {
+        const slider = document.getElementById('memberFeeSlider');
+        const valueDisplay = document.getElementById('memberFeeValue');
+        const breakdownContent = document.getElementById('breakdownContent');
+        
+        if (slider && valueDisplay) {
+            slider.value = currentSettings.member_fee || 100;
+            valueDisplay.textContent = currentSettings.member_fee || 100;
+        }
+        
+        if (breakdownContent && currentSettings.fee_breakdown) {
+            updateFeeBreakdown(currentSettings.member_fee || 100, currentSettings.fee_breakdown);
+        }
+    }
+    
+    function updateFeeBreakdown(memberFee, feeStructure) {
+        const breakdownContent = document.getElementById('breakdownContent');
+        if (!breakdownContent) return;
+        
+        if (!feeStructure || Object.keys(feeStructure).length === 0) {
+            breakdownContent.innerHTML = '<p>No fee structure available.</p>';
+            return;
+        }
+
+        let html = '';
+        Object.entries(feeStructure).forEach(([category, data]) => {
+            const mainFee = parseFloat(data.fee);
+            const calculatedFee = parseFloat(data.calculated_fee);
+            const charge = calculatedFee - mainFee;
+            const memberPaysCharge = charge * (memberFee / 100);
+            const orgPaysCharge = charge - memberPaysCharge;
+            const orgReceives = mainFee - orgPaysCharge;
+            const memberPaysTotal = mainFee + memberPaysCharge;
+
+            html += `
+                <div class="fee-category-breakdown">
+                    <strong>${category}</strong>
+                    <div class="fee-details">
+                        <div>Main Fee: ₦${mainFee.toLocaleString()}</div>
+                        <div>Member Pays: ₦${memberPaysTotal.toLocaleString()} (includes ₦${memberPaysCharge.toLocaleString()} charge)</div>
+                        <div>Association Receives: ₦${orgReceives.toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        breakdownContent.innerHTML = html;
+    }
+    
+    function setupEventListeners() {
+        document.getElementById('feeStructureForm').addEventListener('submit', handleFeeStructureUpdate);
+        document.getElementById('customFieldsForm').addEventListener('submit', handleCustomFieldsUpdate);
+        
+        const memberFeeSlider = document.getElementById('memberFeeSlider');
+        if (memberFeeSlider) {
+            memberFeeSlider.addEventListener('input', function() {
+                const value = this.value;
+                document.getElementById('memberFeeValue').textContent = value;
+                updateFeeBreakdown(value, currentSettings.fee_breakdown);
+            });
+        }
+        
+        const updateMemberFeeBtn = document.getElementById('updateMemberFee');
+        if (updateMemberFeeBtn) {
+            updateMemberFeeBtn.addEventListener('click', updateMemberFee);
+        }
+        
+        document.querySelector('#chargesManagementModal .close').addEventListener('click', closeChargesManagementModal);
+        document.querySelector('#feeStructureModal .close').addEventListener('click', closeFeeStructureModal);
+        document.querySelector('#paymentFormModal .close').addEventListener('click', closePaymentFormModal);
+
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('chargesManagementModal')) closeChargesManagementModal();
+            if (event.target === document.getElementById('feeStructureModal')) closeFeeStructureModal();
+            if (event.target === document.getElementById('paymentFormModal')) closePaymentFormModal();
         });
     }
-
-    const modalClose = document.querySelector('#chargesManagementModal .close');
-    if (modalClose) {
-        modalClose.addEventListener('click', closeChargesManagementModal);
+    
+    function handleFeeStructureUpdate(e) {
+        e.preventDefault();
+        const feeCategories = {};
+        const inputs = document.querySelectorAll('#feeStructureContainer .fee-category');
+        
+        inputs.forEach(categoryEl => {
+            const nameInput = categoryEl.querySelector('input[type="text"]');
+            const amountInput = categoryEl.querySelector('input[type="number"]');
+            if (nameInput.value.trim() && amountInput.value) {
+                feeCategories[nameInput.value.trim()] = parseFloat(amountInput.value);
+            }
+        });
+        
+        updateSettings('update_fees', feeCategories, 'Fee structure updated successfully');
     }
+    
+    function handleCustomFieldsUpdate(e) {
+        e.preventDefault();
+        const customFields = [];
+        const inputs = document.querySelectorAll('#customFieldsContainer .custom-field input');
+        
+        inputs.forEach(input => {
+            if (input.value.trim()) {
+                customFields.push(input.value.trim());
+            }
+        });
+        
+        updateSettings('update_custom_fields', customFields, 'Custom fields updated successfully');
+    }
+    
+    function updateMemberFee() {
+        const memberFee = document.getElementById('memberFeeSlider').value;
+        updateSettings('update_member_fee', memberFee, 'Member fee updated successfully');
+    }
+    
+    function updateSettings(action, data, successMessage) {
+        fetch('/api/association-settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                data: data
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showNotification(successMessage, 'success');
+                initializeSettings();
+                if (action === 'update_member_fee') closeChargesManagementModal();
+                if (action === 'update_fees') closeFeeStructureModal();
+                if (action === 'update_custom_fields') closePaymentFormModal();
+            } else {
+                showNotification(result.message || 'Update failed', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error updating settings', 'error');
+            console.error('Error:', error);
+        });
+    }
+    
+    function addFeeCategory() {
+        const container = document.getElementById('feeStructureContainer');
+        const newCategory = document.createElement('div');
+        newCategory.className = 'fee-category';
+        newCategory.innerHTML = `
+            <input type="text" class="form-input" placeholder="Category name">
+            <input type="number" class="form-input" placeholder="Amount">
+            <button type="button" class="secondary-btn" onclick="removeFeeCategory(this)">Remove</button>
+        `;
+        container.appendChild(newCategory);
+    }
+    
+    function addCustomField() {
+        const container = document.getElementById('customFieldsContainer');
+        const newField = document.createElement('div');
+        newField.className = 'custom-field';
+        newField.innerHTML = `
+            <input type="text" class="form-input" placeholder="Field name">
+            <button type="button" class="secondary-btn" onclick="removeCustomField(this)">Remove</button>
+        `;
+        container.appendChild(newField);
+    }
+    
+    function removeFeeCategory(button) {
+        button.closest('.fee-category').remove();
+    }
+    
+    function removeCustomField(button) {
+        button.closest('.custom-field').remove();
+    }
+    
+    function openChargesManagementModal() {
+        document.getElementById('chargesManagementModal').style.display = 'block';
+    }
+    
+    function closeChargesManagementModal() {
+        document.getElementById('chargesManagementModal').style.display = 'none';
+    }
+    
+    function openFeeStructureModal() {
+        document.getElementById('feeStructureModal').style.display = 'block';
+    }
+    
+    function closeFeeStructureModal() {
+        document.getElementById('feeStructureModal').style.display = 'none';
+    }
+    
+    function openPaymentFormModal() {
+        document.getElementById('paymentFormModal').style.display = 'block';
+    }
+    
+    function closePaymentFormModal() {
+        document.getElementById('paymentFormModal').style.display = 'none';
+    }
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            z-index: 10000;
+            font-weight: 500;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
 
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('chargesManagementModal');
-        if (event.target === modal) {
-            closeChargesManagementModal();
-        }
-    });
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+    
+    window.addFeeCategory = addFeeCategory;
+    window.addCustomField = addCustomField;
+    window.removeFeeCategory = removeFeeCategory;
+    window.removeCustomField = removeCustomField;
+    window.openChargesManagementModal = openChargesManagementModal;
+    window.closeChargesManagementModal = closeChargesManagementModal;
+    window.openFeeStructureModal = openFeeStructureModal;
+    window.closeFeeStructureModal = closeFeeStructureModal;
+    window.openPaymentFormModal = openPaymentFormModal;
+    window.closePaymentFormModal = closePaymentFormModal;
 });
