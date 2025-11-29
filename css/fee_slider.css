@@ -1,0 +1,58 @@
+.seek-bar-container {
+    margin: 20px 0;
+}
+
+.seek-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: #ddd;
+    outline: none;
+    margin: 10px 0;
+}
+
+.seek-bar::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+.seek-bar::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+}
+
+.fee-breakdown {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.fee-category-breakdown {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.fee-category-breakdown:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.fee-details {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.fee-details div {
+    margin: 4px 0;
+    color: #666;
+}
