@@ -40,6 +40,16 @@ function initializeDashboard() {
     if (document.querySelector('#paymentsTable')) {
         loadPayments();
     }
+    //n
+    const feeStructureForm = document.getElementById('feeStructureForm');
+    const paymentFormDataForm = document.getElementById('paymentFormDataForm');
+    if (feeStructureForm) {
+        feeStructureForm.addEventListener('submit', handleFeeStructureUpdate);
+    }
+    if (paymentFormDataForm) {
+        paymentFormDataForm.addEventListener('submit', handlePaymentFormDataUpdate);
+    }
+    
 }
 
 function logout() {
