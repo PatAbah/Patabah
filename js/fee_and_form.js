@@ -1,323 +1,208 @@
-function openFeeStructureModal() {
-    loadFeeStructure();
-    document.getElementById('feeStructureModal').style.display = 'block';
+const feeStructureForm = document.getElementById('feeStructureForm');
+const paymentFormDataForm = document.getElementById('paymentFormDataForm');
+
+if (feeStructureForm) {
+    feeStructureForm.addEventListener('submit', handleFeeStructureUpdate);
 }
 
-function closeFeeStructureModal() {
-    document.getElementById('feeStructureModal').style.display = 'none';
-    document.getElementById('feeStructureForm').reset();
+if (paymentFormDataForm) {
+    paymentFormDataForm.addEventListener('submit', handlePaymentFormDataUpdate);
 }
 
-function loadFeeStructure() {
-    const fees = window.associationData?.fees || {};
-    const container = document.getElementById('feeCategoriesContainer');
-    
-    container.innerHTML = '';
-    
-    Object.entries(fees).forEach(([category, amount], index) => {
-        const feeRow = createFeeCategoryRow(category, amount, index);
-        container.appendChild(feeRow);
-    });
-}
-
-function createFeeCategoryRow(category = '', amount = '', index = 0) {
-    const row = document.createElement('div');
-    row.className = 'fee-category-row';
-    row.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px;';
-    
-    row.innerHTML = `
-        <input type="text" 
-               class="form-input fee-category" 
-               placeholder="Category name (e.g., Membership Fee)"
-               value="${escapeHtml(category)}"
-               style="flex: 2;">
-        <input type="number" 
-               class="form-input fee-amount" 
-               placeholder="Amount" 
-               value="${amount}"
-               min="0" 
-               step="0.01"
-               style="flex: 1;">
-        <button type="button" 
-                class="remove-fee-btn" 
-                onclick="removeFeeCategory(this)"
-                ${Object.keys(window.associationData?.fees || {}).length <= 1 ? 'disabled' : ''}
-                style="background: #dc3545; color: white; border: none; padding: 10px 12px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px;">
-            ×
-        </button>
-    `;
-    
-    return row;
-}
-
-function addNewFeeCategory() {
-    const container = document.getElementById('feeCategoriesContainer');
-    const newRow = createFeeCategoryRow('', '', container.children.length);
-    container.appendChild(newRow);
-    
-    // Enable remove buttons if we have more than 1 fee
-    updateFeeRemoveButtons();
-}
-
-function removeFeeCategory(button) {
-    const row = button.closest('.fee-category-row');
-    const container = document.getElementById('feeCategoriesContainer');
-    
-    if (container.children.length > 1) {
-        row.remove();
-        updateFeeRemoveButtons();
-    }
-}
-
-function updateFeeRemoveButtons() {
-    const container = document.getElementById('feeCategoriesContainer');
-    const removeButtons = container.querySelectorAll('.remove-fee-btn');
-    const hasMultipleFees = container.children.length > 1;
-    
-    removeButtons.forEach(btn => {
-        btn.disabled = !hasMultipleFees;
-        btn.style.opacity = hasMultipleFees ? '1' : '0.5';
-        btn.style.cursor = hasMultipleFees ? 'pointer' : 'not-allowed';
-    });
-}
-
-async function handleFeeStructureUpdate(e) {
+function handleFeeStructureUpdate(e) {
     e.preventDefault();
-    
-    const form = e.target;
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.textContent = 'Saving...';
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('.submit-btn');
+    const originalText = submitBtn.innerHTML;
+
+    submitBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Updating...';
     submitBtn.disabled = true;
-    
-    try {
-        const feeRows = document.querySelectorAll('.fee-category-row');
-        const fees = {};
-        let hasErrors = false;
-        
-        feeRows.forEach((row, index) => {
-            const categoryInput = row.querySelector('.fee-category');
-            const amountInput = row.querySelector('.fee-amount');
-            
-            const category = categoryInput.value.trim();
-            const amount = amountInput.value.trim();
-            
-            if (!category || !amount) {
-                hasErrors = true;
-                if (!category) categoryInput.style.borderColor = 'var(--error-color)';
-                if (!amount) amountInput.style.borderColor = 'var(--error-color)';
-            } else {
-                fees[category] = parseFloat(amount);
-                categoryInput.style.borderColor = '';
-                amountInput.style.borderColor = '';
-            }
-        });
-        
-        if (hasErrors) {
-            alert('Please fill in all category names and amounts');
-            return;
-        }
-        
-        if (Object.keys(fees).length === 0) {
-            alert('At least one fee category is required');
-            return;
-        }
-        
-        const response = await fetch('/ajax/dashboard/update-fees', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ fees })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('Fee structure updated successfully!');
-            closeFeeStructureModal();
-            // Refresh association data if needed
-            if (window.associationData) {
-                window.associationData.fees = fees;
-            }
+
+    fetch('/update-fee-structure', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Fee structure updated successfully!', 'success');
         } else {
-            alert('Error: ' + result.message);
+            showNotification(data.message || 'Update failed', 'error');
         }
-    } catch (error) {
-        alert('Network error. Please try again.');
-    } finally {
-        submitBtn.textContent = originalText;
+    })
+    .catch(error => {
+        showNotification('Error updating fee structure', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-    }
-}
-
-function openPaymentFormModal() {
-    loadPaymentFormData();
-    document.getElementById('paymentFormModal').style.display = 'block';
-}
-
-function closePaymentFormModal() {
-    document.getElementById('paymentFormModal').style.display = 'none';
-    document.getElementById('paymentFormDataForm').reset();
-}
-
-function loadPaymentFormData() {
-    const orgType = window.associationData?.organization_type_id || 1;
-    loadDefaultFields(orgType);
-    loadCustomFields();
-}
-
-function loadDefaultFields(orgType) {
-    const container = document.getElementById('defaultFieldsContainer');
-    const defaultFields = getDefaultFieldsByOrgType(orgType);
-    
-    container.innerHTML = defaultFields.map(field => `
-        <div class="default-field-row" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; opacity: 0.7;">
-            <input type="text" 
-                   class="form-input" 
-                   value="${field.label}" 
-                   disabled
-                   style="flex: 2; background-color: var(--secondary-color);">
-            <input type="text" 
-                   class="form-input" 
-                   value="Required" 
-                   disabled
-                   style="flex: 1; background-color: var(--secondary-color);">
-            <button type="button" disabled style="background: #6c757d; color: white; border: none; padding: 10px 12px; border-radius: var(--border-radius); cursor: not-allowed; font-size: 14px;">
-                ×
-            </button>
-        </div>
-    `).join('');
-}
-
-function getDefaultFieldsByOrgType(orgType) {
-    const defaultFields = [
-        { label: 'Full Name', required: true },
-        { label: 'Email', required: true },
-        { label: 'Phone Number', required: true }
-    ];
-    
-    if (orgType === 1) { // Student
-        defaultFields.splice(1, 0, { label: 'Matriculation Number', required: true });
-    }
-    
-    return defaultFields;
-}
-
-function loadCustomFields() {
-    const customFields = window.associationData?.custom_fields || [];
-    const container = document.getElementById('customFieldsContainer');
-    
-    container.innerHTML = '';
-    
-    customFields.forEach((field, index) => {
-        const fieldRow = createCustomFieldRow(field, index);
-        container.appendChild(fieldRow);
     });
 }
 
-function createCustomFieldRow(field = {}, index = 0) {
-    const row = document.createElement('div');
-    row.className = 'custom-field-row';
-    row.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px;';
-    
-    row.innerHTML = `
-        <input type="text" 
-               class="form-input custom-field-label" 
-               placeholder="Field label (e.g., Department)"
-               value="${escapeHtml(field.name || '')}"
-               style="flex: 2;">
-        <select class="form-input custom-field-required" style="flex: 1;">
-            <option value="0" ${field.is_required ? '' : 'selected'}>Optional</option>
-            <option value="1" ${field.is_required ? 'selected' : ''}>Required</option>
-        </select>
-        <button type="button" 
-                class="remove-custom-field-btn" 
-                onclick="removeCustomField(this)"
-                style="background: #dc3545; color: white; border: none; padding: 10px 12px; border-radius: var(--border-radius); cursor: pointer; font-size: 14px;">
-            ×
-        </button>
-    `;
-    
-    return row;
-}
-
-function addNewCustomField() {
-    const container = document.getElementById('customFieldsContainer');
-    const newRow = createCustomFieldRow({}, container.children.length);
-    container.appendChild(newRow);
-}
-
-function removeCustomField(button) {
-    const row = button.closest('.custom-field-row');
-    row.remove();
-}
-
-async function handlePaymentFormDataUpdate(e) {
+function handlePaymentFormDataUpdate(e) {
     e.preventDefault();
-    
-    const form = e.target;
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.textContent = 'Saving...';
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('.submit-btn');
+    const originalText = submitBtn.innerHTML;
+
+    submitBtn.innerHTML = '<img src="/static/img/loading.gif" style="height: 20px; margin-right: 8px;"> Updating...';
     submitBtn.disabled = true;
-    
-    try {
-        const customFieldRows = document.querySelectorAll('.custom-field-row');
-        const customFields = [];
-        let hasErrors = false;
-        
-        customFieldRows.forEach((row, index) => {
-            const labelInput = row.querySelector('.custom-field-label');
-            const requiredSelect = row.querySelector('.custom-field-required');
-            
-            const label = labelInput.value.trim();
-            const isRequired = requiredSelect.value === '1';
-            
-            if (!label) {
-                hasErrors = true;
-                labelInput.style.borderColor = 'var(--error-color)';
-            } else {
-                customFields.push({
-                    name: label,
-                    is_required: isRequired,
-                    display_order: index
-                });
-                labelInput.style.borderColor = '';
-            }
-        });
-        
-        if (hasErrors) {
-            alert('Please fill in all custom field labels');
-            return;
-        }
-        
-        const response = await fetch('/ajax/dashboard/update-custom-fields', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ custom_fields: customFields })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('Payment form data updated successfully!');
-            closePaymentFormModal();
-            // Refresh association data if needed
-            if (window.associationData) {
-                window.associationData.custom_fields = customFields;
-            }
+
+    fetch('/update-payment-form-data', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Form data updated successfully!', 'success');
         } else {
-            alert('Error: ' + result.message);
+            showNotification(data.message || 'Update failed', 'error');
         }
-    } catch (error) {
-        alert('Network error. Please try again.');
-    } finally {
-        submitBtn.textContent = originalText;
+    })
+    .catch(error => {
+        showNotification('Error updating form data', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-    }
+    });
 }
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        z-index: 10000;
+        font-weight: 500;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function openChargesManagementModal() {
+    const modal = document.getElementById('chargesManagementModal');
+    modal.style.display = 'block';
+    fetchCurrentMemberFee();
+}
+
+function closeChargesManagementModal() {
+    document.getElementById('chargesManagementModal').style.display = 'none';
+}
+
+function fetchCurrentMemberFee() {
+    fetch('/api/get-member-fee')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const slider = document.getElementById('memberFeeSlider');
+                const valueDisplay = document.getElementById('memberFeeValue');
+                slider.value = data.member_fee;
+                valueDisplay.textContent = data.member_fee;
+                updateFeeBreakdown(data.member_fee, data.fee_structure);
+            }
+        })
+        .catch(error => console.error('Error fetching member fee:', error));
+}
+
+function updateFeeBreakdown(memberFee, feeStructure) {
+    const breakdownContent = document.getElementById('breakdownContent');
+    
+    if (!feeStructure || Object.keys(feeStructure).length === 0) {
+        breakdownContent.innerHTML = '<p>No fee structure available.</p>';
+        return;
+    }
+
+    let html = '';
+    Object.entries(feeStructure).forEach(([category, data]) => {
+        const mainFee = parseFloat(data.fee);
+        const calculatedFee = parseFloat(data.calculated_fee);
+        const charge = calculatedFee - mainFee;
+        const memberPaysCharge = charge * (memberFee / 100);
+        const orgPaysCharge = charge - memberPaysCharge;
+        const orgReceives = mainFee - orgPaysCharge;
+        const memberPaysTotal = mainFee + memberPaysCharge;
+
+        html += `
+            <div class="fee-category-breakdown">
+                <strong>${category}</strong>
+                <div class="fee-details">
+                    <div>Main Fee: ₦${mainFee.toLocaleString()}</div>
+                    <div>Member Pays: ₦${memberPaysTotal.toLocaleString()} (includes ₦${memberPaysCharge.toLocaleString()} charge)</div>
+                    <div>Association Receives: ₦${orgReceives.toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    breakdownContent.innerHTML = html;
+}
+
+function updateMemberFee() {
+    const memberFee = document.getElementById('memberFeeSlider').value;
+    
+    fetch('/api/update-member-fee', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'member_fee=' + memberFee
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Member fee updated successfully!', 'success');
+            closeChargesManagementModal();
+        } else {
+            showNotification('Error updating member fee: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating member fee', 'error');
+        console.error('Error:', error);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const memberFeeSlider = document.getElementById('memberFeeSlider');
+    if (memberFeeSlider) {
+        memberFeeSlider.addEventListener('input', function() {
+            const value = this.value;
+            document.getElementById('memberFeeValue').textContent = value;
+            
+            fetch('/api/get-fee-breakdown?member_fee=' + value)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateFeeBreakdown(value, data.fee_structure);
+                    }
+                })
+                .catch(error => console.error('Error fetching fee breakdown:', error));
+        });
+    }
+
+    const modalClose = document.querySelector('#chargesManagementModal .close');
+    if (modalClose) {
+        modalClose.addEventListener('click', closeChargesManagementModal);
+    }
+
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('chargesManagementModal');
+        if (event.target === modal) {
+            closeChargesManagementModal();
+        }
+    });
+});
