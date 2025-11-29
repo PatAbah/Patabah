@@ -9,7 +9,6 @@ function closeFeeStructureModal() {
 }
 
 function loadFeeStructure() {
-    // This will be populated from the association data
     const fees = window.associationData?.fees || {};
     const container = document.getElementById('feeCategoriesContainer');
     
@@ -153,7 +152,6 @@ async function handleFeeStructureUpdate(e) {
     }
 }
 
-// Payment Form Data Modal Functions
 function openPaymentFormModal() {
     loadPaymentFormData();
     document.getElementById('paymentFormModal').style.display = 'block';
