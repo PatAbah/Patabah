@@ -79,6 +79,34 @@ function handleLogoFileSelect({ target: { files } }) {
     reader.readAsDataURL(file);
 }
 
+async function compressImage(canvas, originalType, originalSize) {
+    const hasTransparency = originalType === 'image/png';
+    
+    if (hasTransparency) {
+        const qualities = [0.95, 0.90, 0.85, 0.80, 0.75];
+        for (const quality of qualities) {
+            const blob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/png', quality);
+            });
+            if (blob.size <= MAX_FILE_SIZE) {
+                return blob;
+            }
+        }
+    }
+    
+    const qualities = [0.95, 0.92, 0.90, 0.87, 0.85, 0.82, 0.80, 0.75, 0.70];
+    for (const quality of qualities) {
+        const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/jpeg', quality);
+        });
+        if (blob.size <= MAX_FILE_SIZE) {
+            return blob;
+        }
+    }
+    
+    return null;
+}
+
 function applyCrop() {
     if (!cropperInstance) return;
 
@@ -89,18 +117,24 @@ function applyCrop() {
         imageSmoothingQuality: 'high',
     });
 
-    canvas.toBlob((blob) => {
-        if (blob.size > MAX_FILE_SIZE) {
-            showLogoError(`Cropped image size (${(blob.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please crop a smaller area or use an image compression tool.`);
+    compressImage(canvas, originalFile.type, originalFile.size).then(blob => {
+        if (!blob) {
+            showLogoError(`Unable to compress image below 200KB. Please crop a smaller area or use an image compression tool.`);
             return;
         }
 
-        selectedLogoFile = new File([blob], originalFile.name, {
-            type: originalFile.type,
-            lastModified: Date.now(),
-        });
+        if (blob.size > originalFile.size && originalFile.size <= MAX_FILE_SIZE) {
+            selectedLogoFile = originalFile;
+        } else {
+            const extension = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+            const baseName = originalFile.name.replace(/\.[^/.]+$/, '');
+            selectedLogoFile = new File([blob], `${baseName}.${extension}`, {
+                type: blob.type,
+                lastModified: Date.now(),
+            });
+        }
 
-        const previewUrl = canvas.toDataURL();
+        const previewUrl = canvas.toDataURL(blob.type, 0.95);
         document.getElementById('logoPreview').src = previewUrl;
         document.getElementById('cropContainer').style.display = 'none';
         document.getElementById('logoPreviewArea').style.display = 'block';
@@ -109,7 +143,7 @@ function applyCrop() {
             cropperInstance.destroy();
             cropperInstance = null;
         }
-    }, originalFile.type);
+    });
 }
 
 function cancelCrop() {
@@ -142,18 +176,22 @@ async function handleLogo(e) {
             imageSmoothingQuality: 'high',
         });
 
-        const blob = await new Promise(resolve => {
-            canvas.toBlob(resolve, originalFile.type);
-        });
+        const blob = await compressImage(canvas, originalFile.type, originalFile.size);
 
-        if (blob.size > MAX_FILE_SIZE) {
-            return showLogoError(`Cropped image size (${(blob.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please crop a smaller area or use an image compression tool.`);
+        if (!blob) {
+            return showLogoError(`Unable to compress image below 200KB. Please crop a smaller area or use an image compression tool.`);
         }
 
-        selectedLogoFile = new File([blob], originalFile.name, {
-            type: originalFile.type,
-            lastModified: Date.now(),
-        });
+        if (blob.size > originalFile.size && originalFile.size <= MAX_FILE_SIZE) {
+            selectedLogoFile = originalFile;
+        } else {
+            const extension = blob.type === 'image/jpeg' ? 'jpg' : 'png';
+            const baseName = originalFile.name.replace(/\.[^/.]+$/, '');
+            selectedLogoFile = new File([blob], `${baseName}.${extension}`, {
+                type: blob.type,
+                lastModified: Date.now(),
+            });
+        }
 
         document.getElementById('cropContainer').style.display = 'none';
         
@@ -274,6 +312,13 @@ async function loadSettings() {
             if (officials.treasurer) {
                 document.getElementById('treasurerName').value = officials.treasurer.name || '';
                 document.getElementById('treasurerPhone').value = officials.treasurer.phone || '';
+            }
+            
+            if (logo) {
+                selectedLogoFile = true;
+                document.getElementById('logoPreview').src = logo;
+                document.getElementById('logoUploadArea').style.display = 'none';
+                document.getElementById('logoPreviewArea').style.display = 'block';
             }
             
             document.getElementById('logoSubmitBtn').disabled = false;
