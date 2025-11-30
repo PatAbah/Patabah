@@ -60,7 +60,7 @@ function handleLogoFileSelect({ target: { files } }) {
             cropperInstance = new Cropper(cropImage, {
                 aspectRatio: NaN,
                 viewMode: 1,
-                autoCropArea: 0.8,
+                autoCropArea: 0.85,
                 responsive: true,
                 background: true,
                 movable: true,
