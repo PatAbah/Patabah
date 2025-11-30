@@ -135,12 +135,36 @@ async function handleLogo(e) {
     e.preventDefault();
     
     if (cropperInstance) {
-        applyCrop();
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const canvas = cropperInstance.getCroppedCanvas({
+            maxWidth: 2000,
+            maxHeight: 2000,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, originalFile.type);
+        });
+
+        if (blob.size > MAX_FILE_SIZE) {
+            return showLogoError(`Cropped image size (${(blob.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please crop a smaller area or use an image compression tool.`);
+        }
+
+        selectedLogoFile = new File([blob], originalFile.name, {
+            type: originalFile.type,
+            lastModified: Date.now(),
+        });
+
+        document.getElementById('cropContainer').style.display = 'none';
+        
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
     }
     
     if (!selectedLogoFile) {
-        return showLogoError('Please select and crop a logo to upload');
+        return showLogoError('Please select a logo to upload');
     }
 
     const formData = new FormData();
@@ -169,10 +193,8 @@ async function handleLogo(e) {
                 const { success, message } = JSON.parse(xhr.responseText);
                 if (success) {
                     progressText.textContent = 'Upload complete!';
-                    setTimeout(() => {
-                        closeLogoModal();
-                        location.reload();
-                    }, 1000);
+                    closeLogoModal();
+                    window.location.href = window.location.href;
                 } else {
                     showLogoError(message || 'Upload failed');
                     progressDiv.style.display = 'none';
@@ -252,13 +274,6 @@ async function loadSettings() {
             if (officials.treasurer) {
                 document.getElementById('treasurerName').value = officials.treasurer.name || '';
                 document.getElementById('treasurerPhone').value = officials.treasurer.phone || '';
-            }
-            
-            if (logo) {
-                selectedLogoFile = true;
-                document.getElementById('logoPreview').src = logo;
-                document.getElementById('logoUploadArea').style.display = 'none';
-                document.getElementById('logoPreviewArea').style.display = 'block';
             }
             
             document.getElementById('logoSubmitBtn').disabled = false;
