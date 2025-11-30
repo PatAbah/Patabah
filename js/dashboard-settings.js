@@ -43,30 +43,38 @@ function handleLogoFileSelect({ target: { files } }) {
 
     originalFile = file;
     
-    // Show crop interface
     const reader = new FileReader();
     reader.onload = (e) => {
         document.getElementById('logoUploadArea').style.display = 'none';
+        document.getElementById('logoPreviewArea').style.display = 'none';
         document.getElementById('cropContainer').style.display = 'block';
-        document.getElementById('cropImage').src = e.target.result;
         
-        // Initialize Cropper.js
+        const cropImage = document.getElementById('cropImage');
+        cropImage.src = e.target.result;
+        
         if (cropperInstance) {
             cropperInstance.destroy();
         }
         
-        const image = document.getElementById('cropImage');
-        cropperInstance = new Cropper(image, {
-            aspectRatio: NaN, // Free aspect ratio
-            viewMode: 1,
-            autoCropArea: 0.8,
-            responsive: true,
-            background: false,
-            movable: true,
-            zoomable: true,
-            rotatable: true,
-            scalable: true,
-        });
+        cropImage.onload = function() {
+            cropperInstance = new Cropper(cropImage, {
+                aspectRatio: NaN,
+                viewMode: 1,
+                autoCropArea: 0.8,
+                responsive: true,
+                background: true,
+                movable: true,
+                zoomable: true,
+                rotatable: true,
+                scalable: true,
+                cropBoxResizable: true,
+                cropBoxMovable: true,
+                guides: true,
+                center: true,
+                highlight: true,
+                dragMode: 'move'
+            });
+        };
     };
     reader.readAsDataURL(file);
 }
@@ -74,7 +82,6 @@ function handleLogoFileSelect({ target: { files } }) {
 function applyCrop() {
     if (!cropperInstance) return;
 
-    // Get cropped canvas
     const canvas = cropperInstance.getCroppedCanvas({
         maxWidth: 2000,
         maxHeight: 2000,
@@ -82,26 +89,22 @@ function applyCrop() {
         imageSmoothingQuality: 'high',
     });
 
-    // Convert to blob
     canvas.toBlob((blob) => {
         if (blob.size > MAX_FILE_SIZE) {
             showLogoError(`Cropped image size (${(blob.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please crop a smaller area or use an image compression tool.`);
             return;
         }
 
-        // Create file from blob
         selectedLogoFile = new File([blob], originalFile.name, {
             type: originalFile.type,
             lastModified: Date.now(),
         });
 
-        // Show preview
         const previewUrl = canvas.toDataURL();
         document.getElementById('logoPreview').src = previewUrl;
         document.getElementById('cropContainer').style.display = 'none';
         document.getElementById('logoPreviewArea').style.display = 'block';
         
-        // Cleanup
         if (cropperInstance) {
             cropperInstance.destroy();
             cropperInstance = null;
@@ -117,6 +120,7 @@ function cancelCrop() {
     document.getElementById('cropContainer').style.display = 'none';
     document.getElementById('logoUploadArea').style.display = 'block';
     document.getElementById('logoFileInput').value = '';
+    document.getElementById('logoError').style.display = 'none';
     originalFile = null;
 }
 
@@ -245,6 +249,7 @@ async function loadSettings() {
             }
             
             if (logo) {
+                selectedLogoFile = true;
                 document.getElementById('logoPreview').src = logo;
                 document.getElementById('logoUploadArea').style.display = 'none';
                 document.getElementById('logoPreviewArea').style.display = 'block';
