@@ -193,7 +193,7 @@ async function handleLogo(e) {
             });
         }
 
-        document.getElementById('cropContainer').style.display = 'none';
+        //document.getElementById('cropContainer').style.display = 'none';
         
         if (cropperInstance) {
             cropperInstance.destroy();
