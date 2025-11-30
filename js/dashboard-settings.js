@@ -133,6 +133,12 @@ function showLogoError(message) {
 
 async function handleLogo(e) {
     e.preventDefault();
+    
+    if (cropperInstance) {
+        applyCrop();
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     if (!selectedLogoFile) {
         return showLogoError('Please select and crop a logo to upload');
     }
