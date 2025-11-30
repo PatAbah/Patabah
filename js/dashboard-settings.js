@@ -1,4 +1,6 @@
 let selectedLogoFile = null;
+let cropperInstance = null;
+let originalFile = null;
 const MAX_FILE_SIZE = 200 * 1024;
 
 function initLogoUpload() {
@@ -35,17 +37,87 @@ function handleLogoFileSelect({ target: { files } }) {
     errorDiv.style.display = 'none';
 
     if (!file) return;
-    if (!file.type.startsWith('image/')) return showLogoError('Please select an image file (PNG, JPG, GIF)');
-    if (file.size > MAX_FILE_SIZE) return showLogoError(`File size (${(file.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please reduce your logo size. You can use a fee online image compressor tool.</a>`);
+    if (!file.type.startsWith('image/')) {
+        return showLogoError('Please select an image file (PNG, JPG, GIF)');
+    }
 
-    selectedLogoFile = file;
+    originalFile = file;
+    
+    // Show crop interface
     const reader = new FileReader();
     reader.onload = (e) => {
-        document.getElementById('logoPreview').src = e.target.result;
         document.getElementById('logoUploadArea').style.display = 'none';
-        document.getElementById('logoPreviewArea').style.display = 'block';
+        document.getElementById('cropContainer').style.display = 'block';
+        document.getElementById('cropImage').src = e.target.result;
+        
+        // Initialize Cropper.js
+        if (cropperInstance) {
+            cropperInstance.destroy();
+        }
+        
+        const image = document.getElementById('cropImage');
+        cropperInstance = new Cropper(image, {
+            aspectRatio: NaN, // Free aspect ratio
+            viewMode: 1,
+            autoCropArea: 0.8,
+            responsive: true,
+            background: false,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+        });
     };
     reader.readAsDataURL(file);
+}
+
+function applyCrop() {
+    if (!cropperInstance) return;
+
+    // Get cropped canvas
+    const canvas = cropperInstance.getCroppedCanvas({
+        maxWidth: 2000,
+        maxHeight: 2000,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+    });
+
+    // Convert to blob
+    canvas.toBlob((blob) => {
+        if (blob.size > MAX_FILE_SIZE) {
+            showLogoError(`Cropped image size (${(blob.size / 1024).toFixed(2)}KB) exceeds 200KB limit. Please crop a smaller area or use an image compression tool.`);
+            return;
+        }
+
+        // Create file from blob
+        selectedLogoFile = new File([blob], originalFile.name, {
+            type: originalFile.type,
+            lastModified: Date.now(),
+        });
+
+        // Show preview
+        const previewUrl = canvas.toDataURL();
+        document.getElementById('logoPreview').src = previewUrl;
+        document.getElementById('cropContainer').style.display = 'none';
+        document.getElementById('logoPreviewArea').style.display = 'block';
+        
+        // Cleanup
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+    }, originalFile.type);
+}
+
+function cancelCrop() {
+    if (cropperInstance) {
+        cropperInstance.destroy();
+        cropperInstance = null;
+    }
+    document.getElementById('cropContainer').style.display = 'none';
+    document.getElementById('logoUploadArea').style.display = 'block';
+    document.getElementById('logoFileInput').value = '';
+    originalFile = null;
 }
 
 function showLogoError(message) {
@@ -57,7 +129,9 @@ function showLogoError(message) {
 
 async function handleLogo(e) {
     e.preventDefault();
-    if (!selectedLogoFile) return showLogoError('Please select a logo to upload');
+    if (!selectedLogoFile) {
+        return showLogoError('Please select and crop a logo to upload');
+    }
 
     const formData = new FormData();
     formData.append('logo', selectedLogoFile);
@@ -139,11 +213,19 @@ function closeLogoModal() {
     document.getElementById('logoModal').style.display = 'none';
     document.getElementById('logoForm').reset();
     document.getElementById('logoUploadArea').style.display = 'block';
+    document.getElementById('cropContainer').style.display = 'none';
     document.getElementById('logoPreviewArea').style.display = 'none';
     document.getElementById('logoUploadProgress').style.display = 'none';
     document.getElementById('logoError').style.display = 'none';
     document.getElementById('logoSubmitBtn').disabled = false;
+    
+    if (cropperInstance) {
+        cropperInstance.destroy();
+        cropperInstance = null;
+    }
+    
     selectedLogoFile = null;
+    originalFile = null;
 }
 
 async function loadSettings() {
