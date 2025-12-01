@@ -1,7 +1,7 @@
 let selectedLogoFile = null;
 let cropperInstance = null;
 let originalFile = null;
-const MAX_FILE_SIZE = 200 * 1024;
+const MAX_FILE_SIZE = 320 * 1024;
 
 function initLogoUpload() {
     const fileInput = document.getElementById('logoFileInput');
