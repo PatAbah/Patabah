@@ -166,7 +166,7 @@
     width: 100%;
     height: 6px;
     border-radius: 3px;
-    background: var(--border-color, #ddd);
+    background: var(--border-color, #d6570c);
     outline: none;
     -webkit-appearance: none;
 }
