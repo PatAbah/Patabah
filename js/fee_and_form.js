@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function closeFeeStructureModal() {
         document.getElementById('feeStructureModal').style.display = 'none';
+        window.location.reload();
     }
     
     function openPaymentFormModal() {
