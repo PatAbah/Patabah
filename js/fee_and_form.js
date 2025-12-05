@@ -242,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function closeFeeStructureModal() {
         document.getElementById('feeStructureModal').style.display = 'none';
-        window.location.reload();
     }
     
     function openPaymentFormModal() {
@@ -252,7 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function closePaymentFormModal() {
         document.getElementById('paymentFormModal').style.display = 'none';
-        window.location.reload();
     }
     
     function showNotification(message, type) {
