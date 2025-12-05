@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('memberFeeSlider').addEventListener('input', function() {
             const value = this.value;
             document.getElementById('memberFeeValue').textContent = value;
-            this.style.setProperty('value', value);
+            this.value = value; //('value', value);
             updateFeeBreakdown(value, currentSettings.fee_breakdown);
         });
         document.getElementById('updateMemberFee').addEventListener('click', updateMemberFee);
