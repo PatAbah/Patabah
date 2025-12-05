@@ -171,37 +171,6 @@
     -webkit-appearance: none;
 }
 
-.seek-bar::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--primary-color, #d6570c);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.seek-bar::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--primary-color, #d6570c);
-    cursor: pointer;
-    border: none;
-    transition: all var(--transition-fast);
-}
-
-.seek-bar::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 6px rgba(214, 87, 12, 0.1);
-}
-
-.seek-bar::-moz-range-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 6px rgba(214, 87, 12, 0.1);
-}
-
 .form-input {
     padding: 10px 12px;
     font-size: var(--font-size-md);
