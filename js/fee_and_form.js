@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const orgPaysCharge = charge - memberPaysCharge;
             const orgReceives = mainFee - orgPaysCharge;
             const memberPaysTotal = mainFee + memberPaysCharge;
-            html += `<div class="fee-category-breakdown"><strong>${category}</strong><div class="fee-details"><div>Main Fee: ₦${mainFee.toLocaleString()}</div><div>Member Pays: ₦${memberPaysTotal.toLocaleString()} (includes ₦${memberPaysCharge.toLocaleString()} charge)</div><div>Association Receives: ₦${orgReceives.toLocaleString()}</div><div>Amount shown on receipts: ₦${mainFee.toLocaleString()} (always)</div></div></div>`;
+            html += `<div class="fee-category-breakdown"><strong>${category}</strong><div class="fee-details"><div>Main Fee: ₦${mainFee.toFixed(2).toLocaleString()}</div><div>Member Pays: ₦${memberPaysTotal.toFixed(2).toLocaleString()} (includes ₦${memberPaysCharge.toFixed(2).toLocaleString()} charge)</div><div>Association Receives: ₦${orgReceives.toFixed(2).toLocaleString()}</div><div>Amount shown on receipts: ₦${mainFee.toFixed(2).toLocaleString()} (always)</div></div></div>`;
         });
         breakdownContent.innerHTML = html;
     }
