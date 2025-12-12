@@ -360,6 +360,7 @@ function renderCustomFields(customFields) {
 async function getTotalAmount(inputAmount) {
     const formFeeData = new FormData();
     formFeeData.append('amount', inputAmount);
+    formFeeData.append('aid', currentAssociationId);
     try {
         const response = await fetch('/api/service-fee', { method: 'POST', body: formFeeData });
         const data = await response.json();
