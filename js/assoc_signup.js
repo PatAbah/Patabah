@@ -159,7 +159,7 @@ function nextStep(stepNumber) {
     } else if (currentStepNum === 2) {
         formData.institution = document.getElementById('institution').value.trim();
         if (!formData.institution_id) {
-            alert("Please select an institution from the suggestions. If you can't find your institution name, please contact us and we'll add it ASAP. Thank you!");
+            alert("Please select an institution from the suggestions that show up as you type. Contact us if you can't find your institution in the suggestions. Thank you!");
             return;
         }
         showStep(3);
